@@ -70,6 +70,25 @@ add_subdirectory(lvgl)
 target_include_directories(lvgl PUBLIC ${PROJECT_SOURCE_DIR} ${SDL2_INCLUDE_DIRS})
 
 set(MAIN_SOURCES src/mouse_cursor_icon.c src/hal/hal.c)
+
+# UI sources from SquareLine Studio
+file(GLOB UI_SOURCES
+    "${PROJECT_SOURCE_DIR}/src/ui.c"
+    "${PROJECT_SOURCE_DIR}/src/ui_helpers.c"
+    "${PROJECT_SOURCE_DIR}/src/fonts/*.c"
+    "${PROJECT_SOURCE_DIR}/src/images/*.c"
+    "${PROJECT_SOURCE_DIR}/src/components/*.c"
+    "${PROJECT_SOURCE_DIR}/src/screens/*.c"
+)
+list(APPEND MAIN_SOURCES ${UI_SOURCES})
+
+# UI include directories
+include_directories(
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/src/components
+    ${PROJECT_SOURCE_DIR}/src/screens
+)
+
 set(MAIN_LIBS lvgl lvgl::examples lvgl::demos lvgl::thorvg ${SDL2_LIBRARIES})
 
 # Create the main executable, depending on the FreeRTOS option
