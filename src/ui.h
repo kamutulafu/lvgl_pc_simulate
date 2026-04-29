@@ -11,7 +11,8 @@ extern "C" {
 #define SCR_W  320
 #define SCR_H  240
 
-#define UI_FONT_CJK_14 (&lv_font_source_han_sans_sc_14_cjk)
+LV_FONT_DECLARE(ui_font_CJK_14)
+#define UI_FONT_CJK_14 (&ui_font_CJK_14)
 
 /* ── Colour palette (dark theme) ────────────────── */
 #define C_BG_SCREEN   lv_color_hex(0x0E1620)
