@@ -20,8 +20,6 @@
   #include <pthread.h>
 #endif
 #include "lvgl/lvgl.h"
-#include "lvgl/examples/lv_examples.h"
-#include "lvgl/demos/lv_demos.h"
 #include <SDL.h>
 
 #include "hal/hal.h"
@@ -62,7 +60,7 @@ int main(int argc, char **argv)
   lv_init();
 
   /*Initialize the HAL (display, input devices, tick) for LVGL*/
-  sdl_hal_init(1024, 600);
+  sdl_hal_init(SCR_W, SCR_H);
 
   /* Run the SquareLine UI */
   ui_init();
