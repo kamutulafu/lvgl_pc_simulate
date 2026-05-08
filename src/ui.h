@@ -72,6 +72,7 @@ extern int      g_gas_count;   /* 1‥5 */
 void ui_page_home_create(lv_obj_t *parent);
 void ui_page_password_create(lv_obj_t *parent);
 void ui_page_menu_create(lv_obj_t *parent);
+void ui_page_param_create(lv_obj_t *parent);
 
 /* ── Key handler (call from your BSP IRQ/task) ───── */
 typedef enum { KEY_UP, KEY_DOWN, KEY_OK, KEY_ESC } ui_key_t;
@@ -81,7 +82,7 @@ void ui_key_event(ui_key_t key);
 void ui_refresh_home(void);
 
 /* ── Screen manager ──────────────────────────────── */
-typedef enum { PAGE_HOME, PAGE_PASSWORD, PAGE_MENU } ui_page_t;
+typedef enum { PAGE_HOME, PAGE_PASSWORD, PAGE_MENU, PAGE_PARAM } ui_page_t;
 void ui_goto(ui_page_t page);
 void ui_init(void);
 void ui_destroy(void);

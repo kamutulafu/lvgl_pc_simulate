@@ -21,6 +21,7 @@ int g_gas_count = 5;  /* change to 1‥5 to test each layout */
 static lv_obj_t *scr_home;
 static lv_obj_t *scr_password;
 static lv_obj_t *scr_menu;
+static lv_obj_t *scr_param;
 
 ui_page_t cur_page = PAGE_HOME;
 
@@ -69,6 +70,10 @@ lv_obj_t *ui_topbar_create(lv_obj_t *parent,
                             lv_color_t  badge_bg,
                             lv_color_t  badge_col)
 {
+    (void)badge_text;
+    (void)badge_bg;
+    (void)badge_col;
+
     lv_obj_t *bar = lv_obj_create(parent);
     lv_obj_set_size(bar, SCR_W, 30);
     lv_obj_align(bar, LV_ALIGN_TOP_MID, 0, 0);
@@ -87,38 +92,40 @@ lv_obj_t *ui_topbar_create(lv_obj_t *parent,
     lv_label_set_text(lbl_title, title);
     lv_obj_set_style_text_color(lbl_title, C_ACCENT, 0);
     lv_obj_set_style_text_font(lbl_title, UI_FONT_CJK_14, 0);
+    lv_obj_set_width(lbl_title, 120);
+    lv_label_set_long_mode(lbl_title, LV_LABEL_LONG_CLIP);
     lv_obj_align(lbl_title, LV_ALIGN_LEFT_MID, 0, 0);
 
-    /* Right cluster: temp | date | badge */
+    /* Right status cluster: time | temp | network | bluetooth | battery */
+    lv_obj_t *lbl_time = lv_label_create(bar);
+    lv_label_set_text(lbl_time, "12:00");
+    lv_obj_set_style_text_color(lbl_time, C_TEXT_DATE, 0);
+    lv_obj_set_style_text_font(lbl_time, &lv_font_montserrat_10, 0);
+    lv_obj_align(lbl_time, LV_ALIGN_RIGHT_MID, -124, 0);
+
     lv_obj_t *lbl_temp = lv_label_create(bar);
     lv_label_set_text(lbl_temp, "24.3°C");
     lv_obj_set_style_text_color(lbl_temp, C_TEXT_TEMP, 0);
     lv_obj_set_style_text_font(lbl_temp, &lv_font_montserrat_10, 0);
-    lv_obj_align(lbl_temp, LV_ALIGN_RIGHT_MID, -90, 0);
+    lv_obj_align(lbl_temp, LV_ALIGN_RIGHT_MID, -78, 0);
 
-    lv_obj_t *lbl_date = lv_label_create(bar);
-    lv_label_set_text(lbl_date, "04-28");
-    lv_obj_set_style_text_color(lbl_date, C_TEXT_DATE, 0);
-    lv_obj_set_style_text_font(lbl_date, &lv_font_montserrat_10, 0);
-    lv_obj_align(lbl_date, LV_ALIGN_RIGHT_MID, -45, 0);
+    lv_obj_t *lbl_net = lv_label_create(bar);
+    lv_label_set_text(lbl_net, LV_SYMBOL_WIFI);
+    lv_obj_set_style_text_color(lbl_net, C_OK, 0);
+    lv_obj_set_style_text_font(lbl_net, &lv_font_montserrat_12, 0);
+    lv_obj_align(lbl_net, LV_ALIGN_RIGHT_MID, -42, 0);
 
-    /* Badge pill */
-    lv_obj_t *badge = lv_obj_create(bar);
-    lv_obj_set_size(badge, LV_SIZE_CONTENT, 16);
-    lv_obj_align(badge, LV_ALIGN_RIGHT_MID, 0, 0);
-    lv_obj_set_style_bg_color(badge, badge_bg, 0);
-    lv_obj_set_style_bg_opa(badge, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_width(badge, 0, 0);
-    lv_obj_set_style_radius(badge, 8, 0);
-    lv_obj_set_style_pad_hor(badge, 5, 0);
-    lv_obj_set_style_pad_ver(badge, 0, 0);
-    lv_obj_clear_flag(badge, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_t *lbl_bt = lv_label_create(bar);
+    lv_label_set_text(lbl_bt, LV_SYMBOL_BLUETOOTH);
+    lv_obj_set_style_text_color(lbl_bt, C_ACCENT, 0);
+    lv_obj_set_style_text_font(lbl_bt, &lv_font_montserrat_12, 0);
+    lv_obj_align(lbl_bt, LV_ALIGN_RIGHT_MID, -24, 0);
 
-    lv_obj_t *lbl_badge = lv_label_create(badge);
-    lv_label_set_text(lbl_badge, badge_text);
-    lv_obj_set_style_text_color(lbl_badge, badge_col, 0);
-    lv_obj_set_style_text_font(lbl_badge, UI_FONT_CJK_14, 0);
-    lv_obj_center(lbl_badge);
+    lv_obj_t *lbl_bat = lv_label_create(bar);
+    lv_label_set_text(lbl_bat, LV_SYMBOL_BATTERY_3);
+    lv_obj_set_style_text_color(lbl_bat, C_OK, 0);
+    lv_obj_set_style_text_font(lbl_bat, &lv_font_montserrat_12, 0);
+    lv_obj_align(lbl_bat, LV_ALIGN_RIGHT_MID, -4, 0);
 
     return bar;
 }
@@ -143,14 +150,23 @@ lv_obj_t *ui_hintbar_create(lv_obj_t *parent,
     lv_obj_clear_flag(bar, LV_OBJ_FLAG_SCROLLABLE);
 
     const char *hints[4] = { h_up, h_dn, h_ok, h_esc };
+    int hint_count = 0;
+    for (int i = 0; i < 4; i++) {
+        if (hints[i] && hints[i][0] != '\0') hint_count++;
+    }
+
     for (int i = 0; i < 4; i++) {
         if (!hints[i] || hints[i][0] == '\0') continue;
         lv_obj_t *lbl = lv_label_create(bar);
         lv_label_set_text(lbl, hints[i]);
         lv_obj_set_style_text_color(lbl, lv_color_hex(0x556A7A), 0);
         lv_obj_set_style_text_font(lbl, UI_FONT_CJK_14, 0);
-        /* Evenly space 4 slots across 320 px */
-        lv_obj_align(lbl, LV_ALIGN_LEFT_MID, 4 + i * 78, 0);
+        if (hint_count == 1) {
+            lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
+        } else {
+            /* Evenly space 4 slots across 320 px */
+            lv_obj_align(lbl, LV_ALIGN_LEFT_MID, 4 + i * 78, 0);
+        }
     }
     return bar;
 }
@@ -202,6 +218,7 @@ void ui_goto(ui_page_t page)
     if      (page == PAGE_HOME)     target = scr_home;
     else if (page == PAGE_PASSWORD) target = scr_password;
     else if (page == PAGE_MENU)     target = scr_menu;
+    else if (page == PAGE_PARAM)    target = scr_param;
 
     if (target) {
         lv_scr_load_anim(target, LV_SCR_LOAD_ANIM_FADE_ON, 150, 0, false);
@@ -220,25 +237,30 @@ void ui_init(void)
     scr_home     = lv_obj_create(NULL);
     scr_password = lv_obj_create(NULL);
     scr_menu     = lv_obj_create(NULL);
+    scr_param    = lv_obj_create(NULL);
 
     ui_style_screen(scr_home);
     ui_style_screen(scr_password);
     ui_style_screen(scr_menu);
+    ui_style_screen(scr_param);
 
     lv_obj_add_event_cb(scr_home, ui_key_catcher_event_cb, LV_EVENT_KEY, NULL);
     lv_obj_add_event_cb(scr_password, ui_key_catcher_event_cb, LV_EVENT_KEY, NULL);
     lv_obj_add_event_cb(scr_menu, ui_key_catcher_event_cb, LV_EVENT_KEY, NULL);
+    lv_obj_add_event_cb(scr_param, ui_key_catcher_event_cb, LV_EVENT_KEY, NULL);
 
     lv_group_t *group = lv_group_get_default();
     if (group) {
         lv_group_add_obj(group, scr_home);
         lv_group_add_obj(group, scr_password);
         lv_group_add_obj(group, scr_menu);
+        lv_group_add_obj(group, scr_param);
     }
 
     ui_page_home_create(scr_home);
     ui_page_password_create(scr_password);
     ui_page_menu_create(scr_menu);
+    ui_page_param_create(scr_param);
 
     ui_goto(PAGE_HOME);
 }
@@ -256,5 +278,9 @@ void ui_destroy(void)
     if (scr_menu) {
         lv_obj_delete(scr_menu);
         scr_menu = NULL;
+    }
+    if (scr_param) {
+        lv_obj_delete(scr_param);
+        scr_param = NULL;
     }
 }

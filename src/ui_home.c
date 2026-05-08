@@ -334,13 +334,6 @@ void ui_page_home_create(lv_obj_t *parent)
 
     /* Bottom hint */
     ui_hintbar_create(parent, "", "", "OK 设置", "");
-
-    /* "Press OK" footer hint */
-    lv_obj_t *tip = lv_label_create(parent);
-    lv_label_set_text(tip, "按 OK 进入设置");
-    lv_obj_set_style_text_color(tip, lv_color_hex(0x2A5A3A), 0);
-    lv_obj_set_style_text_font(tip, UI_FONT_CJK_14, 0);
-    lv_obj_align(tip, LV_ALIGN_BOTTOM_MID, 0, -24);
 }
 
 /* ─────────────────────────────────────────────────

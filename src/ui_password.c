@@ -20,7 +20,7 @@
 #define PW_MAX_FAIL   3
 #define PW_LOCK_SEC   30
 
-static const uint8_t PW_CORRECT[PW_DIGITS] = { 0, 8, 5, 2, 1 };
+static const uint8_t PW_CORRECT[PW_DIGITS] = { 0, 0, 0, 0, 1 };
 
 /* ── State ───────────────────────────────────────── */
 static uint8_t  pw_digits[PW_DIGITS];

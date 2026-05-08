@@ -76,6 +76,7 @@ set(UI_SOURCES
     src/ui_common.c
     src/ui_home.c
     src/ui_menu.c
+    src/ui_param.c
     src/ui_password.c
     src/fonts/ui_font_CJK_14.c
 )

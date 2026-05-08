@@ -68,7 +68,7 @@ void ui_menu_key(ui_key_t key)
         if (menu_sel < (int)MENU_COUNT - 1) { menu_sel++; menu_redraw(); }
         break;
     case KEY_OK:
-        /* TODO: navigate into sub-page for MENU_ITEMS[menu_sel] */
+        if (menu_sel == 0) ui_goto(PAGE_PARAM);
         break;
     case KEY_ESC:
         menu_sel = 0;
@@ -148,6 +148,7 @@ void ui_page_menu_create(lv_obj_t *parent)
 /* Forward declarations from other translation units */
 extern void ui_pw_key(ui_key_t key);
 extern void ui_menu_key(ui_key_t key);
+extern void ui_param_key(ui_key_t key);
 
 /* Current page is tracked in ui_common.c; expose it: */
 extern ui_page_t cur_page;   /* defined in ui_common.c as static – move to .h if needed */
@@ -163,6 +164,9 @@ void ui_key_event(ui_key_t key)
         break;
     case PAGE_MENU:
         ui_menu_key(key);
+        break;
+    case PAGE_PARAM:
+        ui_param_key(key);
         break;
     }
 }
