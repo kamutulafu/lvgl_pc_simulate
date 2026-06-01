@@ -31,27 +31,36 @@ static const menu_item_t MENU_ITEMS[] = {
 
 /* ── State ───────────────────────────────────────── */
 static int menu_sel = 0;
+static int menu_top = 0;
 
 /* ── Widget handles ──────────────────────────────── */
-static lv_obj_t *menu_rows[MENU_COUNT];
-static lv_obj_t *menu_lbls[MENU_COUNT];
-
-#define FN10 (&lv_font_montserrat_10)
-#define FN12 (&lv_font_montserrat_12)
+#define VISIBLE_ROWS 4
+static lv_obj_t *menu_rows[VISIBLE_ROWS];
+static lv_obj_t *menu_lbls[VISIBLE_ROWS];
+static lv_obj_t *menu_icons[VISIBLE_ROWS];
 
 /* ─────────────────────────────────────────────────
  *  Redraw selection highlight
  * ───────────────────────────────────────────────── */
 static void menu_redraw(void)
 {
-    for (int i = 0; i < (int)MENU_COUNT; i++) {
-        bool sel = (i == menu_sel);
-        lv_obj_set_style_bg_color(menu_rows[i],
-            sel ? lv_color_hex(0x162840) : lv_color_hex(0x0E1820), 0);
-        lv_obj_set_style_border_color(menu_rows[i],
-            sel ? lv_color_hex(0x2A6AAA) : lv_color_hex(0x1A2A3A), 0);
-        lv_obj_set_style_text_color(menu_lbls[i],
-            sel ? lv_color_hex(0xFFFFFF) : lv_color_hex(0x556A7A), 0);
+    for (int i = 0; i < VISIBLE_ROWS; i++) {
+        int item_idx = menu_top + i;
+        if (item_idx < (int)MENU_COUNT) {
+            lv_obj_remove_flag(menu_rows[i], LV_OBJ_FLAG_HIDDEN);
+            lv_label_set_text(menu_lbls[i], MENU_ITEMS[item_idx].label);
+            lv_label_set_text(menu_icons[i], MENU_ITEMS[item_idx].icon);
+            
+            bool sel = (item_idx == menu_sel);
+            lv_obj_set_style_bg_color(menu_rows[i],
+                sel ? C_PW_ACTIVE : C_BG_CARD, 0);
+            lv_obj_set_style_border_color(menu_rows[i],
+                sel ? C_PW_BORDER : C_BORDER, 0);
+            lv_obj_set_style_text_color(menu_lbls[i],
+                sel ? C_TEXT_PRI : C_TEXT_SEC, 0);
+        } else {
+            lv_obj_add_flag(menu_rows[i], LV_OBJ_FLAG_HIDDEN);
+        }
     }
 }
 
@@ -62,16 +71,25 @@ void ui_menu_key(ui_key_t key)
 {
     switch (key) {
     case KEY_UP:
-        if (menu_sel > 0) { menu_sel--; menu_redraw(); }
+        if (menu_sel > 0) {
+            menu_sel--;
+            if (menu_sel < menu_top) menu_top = menu_sel;
+            menu_redraw();
+        }
         break;
     case KEY_DOWN:
-        if (menu_sel < (int)MENU_COUNT - 1) { menu_sel++; menu_redraw(); }
+        if (menu_sel < (int)MENU_COUNT - 1) {
+            menu_sel++;
+            if (menu_sel >= menu_top + VISIBLE_ROWS) menu_top = menu_sel - VISIBLE_ROWS + 1;
+            menu_redraw();
+        }
         break;
     case KEY_OK:
         if (menu_sel == 0) ui_goto(PAGE_PARAM);
         break;
     case KEY_ESC:
         menu_sel = 0;
+        menu_top = 0;
         menu_redraw();
         ui_goto(PAGE_HOME);
         break;
@@ -84,20 +102,21 @@ void ui_menu_key(ui_key_t key)
 void ui_page_menu_create(lv_obj_t *parent)
 {
     menu_sel = 0;
+    menu_top = 0;
 
     ui_topbar_create(parent, "系统菜单", "已验证",
-                     lv_color_hex(0x1A3A20), lv_color_hex(0x4ECB71));
+                     C_BADGE_OK_BG, C_OK);
 
     int content_h = SCR_H - 30 - 22;  /* 188 px */
-    int row_h_px  = content_h / (int)MENU_COUNT;  /* evenly divide */
+    int row_h_px  = content_h / VISIBLE_ROWS;  /* evenly divide */
 
-    for (int i = 0; i < (int)MENU_COUNT; i++) {
+    for (int i = 0; i < VISIBLE_ROWS; i++) {
         lv_obj_t *row = lv_obj_create(parent);
         lv_obj_set_pos(row, MENU_X, MENU_Y + i * row_h_px);
         lv_obj_set_size(row, SCR_W, row_h_px);
-        lv_obj_set_style_bg_color(row, lv_color_hex(0x0E1820), 0);
+        lv_obj_set_style_bg_color(row, C_BG_CARD, 0);
         lv_obj_set_style_bg_opa(row, LV_OPA_COVER, 0);
-        lv_obj_set_style_border_color(row, lv_color_hex(0x1A2A3A), 0);
+        lv_obj_set_style_border_color(row, C_BORDER, 0);
         lv_obj_set_style_border_width(row, 1, 0);
         lv_obj_set_style_border_side(row, LV_BORDER_SIDE_BOTTOM, 0);
         lv_obj_set_style_radius(row, 0, 0);
@@ -108,31 +127,30 @@ void ui_page_menu_create(lv_obj_t *parent)
         /* Cursor marker */
         lv_obj_t *cursor = lv_label_create(row);
         lv_label_set_text(cursor, LV_SYMBOL_RIGHT);
-        lv_obj_set_style_text_color(cursor, lv_color_hex(0x7ECFFF), 0);
-        lv_obj_set_style_text_font(cursor, FN10, 0);
-        lv_obj_align(cursor, LV_ALIGN_LEFT_MID, 6, 0);
+        lv_obj_set_style_text_color(cursor, C_ACCENT, 0);
+        lv_obj_set_style_text_font(cursor, &lv_font_montserrat_14, 0);
+        lv_obj_align(cursor, LV_ALIGN_LEFT_MID, 10, 0);
 
         /* Icon */
         lv_obj_t *icon = lv_label_create(row);
-        lv_label_set_text(icon, MENU_ITEMS[i].icon);
-        lv_obj_set_style_text_color(icon, lv_color_hex(0x7ECFFF), 0);
-        lv_obj_set_style_text_font(icon, FN12, 0);
-        lv_obj_align(icon, LV_ALIGN_LEFT_MID, 22, 0);
+        lv_obj_set_style_text_color(icon, C_ACCENT, 0);
+        lv_obj_set_style_text_font(icon, &lv_font_montserrat_16, 0);
+        lv_obj_align(icon, LV_ALIGN_LEFT_MID, 30, 0);
+        menu_icons[i] = icon;
 
         /* Label */
         lv_obj_t *lbl = lv_label_create(row);
-        lv_label_set_text(lbl, MENU_ITEMS[i].label);
-        lv_obj_set_style_text_color(lbl, lv_color_hex(0x556A7A), 0);
+        lv_obj_set_style_text_color(lbl, C_TEXT_PRI, 0);
         lv_obj_set_style_text_font(lbl, UI_FONT_CJK_14, 0);
-        lv_obj_align(lbl, LV_ALIGN_LEFT_MID, 40, 0);
+        lv_obj_align(lbl, LV_ALIGN_LEFT_MID, 56, 0);
         menu_lbls[i] = lbl;
 
         /* Chevron (right arrow hint) */
         lv_obj_t *chev = lv_label_create(row);
         lv_label_set_text(chev, LV_SYMBOL_RIGHT);
-        lv_obj_set_style_text_color(chev, lv_color_hex(0x2A4A6A), 0);
-        lv_obj_set_style_text_font(chev, FN10, 0);
-        lv_obj_align(chev, LV_ALIGN_RIGHT_MID, -6, 0);
+        lv_obj_set_style_text_color(chev, C_TEXT_HINT, 0);
+        lv_obj_set_style_text_font(chev, &lv_font_montserrat_14, 0);
+        lv_obj_align(chev, LV_ALIGN_RIGHT_MID, -10, 0);
     }
 
     menu_redraw();

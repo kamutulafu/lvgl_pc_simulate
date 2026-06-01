@@ -15,35 +15,35 @@ LV_FONT_DECLARE(ui_font_CJK_14)
 #define UI_FONT_CJK_14 (&ui_font_CJK_14)
 
 /* ── Colour palette (dark theme) ────────────────── */
-#define C_BG_SCREEN   lv_color_hex(0x0E1620)
-#define C_BG_TOPBAR   lv_color_hex(0x131F2E)
-#define C_BG_CARD     lv_color_hex(0x131F2E)
-#define C_BG_CARD_ALT lv_color_hex(0x1A1020)  /* alarm card */
+#define C_BG_SCREEN   lv_color_hex(0x000000)
+#define C_BG_TOPBAR   lv_color_hex(0x222222)
+#define C_BG_CARD     lv_color_hex(0x222222)
+#define C_BG_CARD_ALT lv_color_hex(0x441111)  /* alarm card */
 
-#define C_BORDER      lv_color_hex(0x1E3A52)
-#define C_BORDER_ALARM lv_color_hex(0x5A1A1A)
+#define C_BORDER      lv_color_hex(0x555555)
+#define C_BORDER_ALARM lv_color_hex(0xAA3333)
 
-#define C_TEXT_PRI    lv_color_hex(0xF0F0F0)
-#define C_TEXT_SEC    lv_color_hex(0x7EA8CC)
-#define C_TEXT_HINT   lv_color_hex(0x445A6A)
-#define C_TEXT_DATE   lv_color_hex(0x7EA8CC)
-#define C_TEXT_TEMP   lv_color_hex(0xE8A730)
+#define C_TEXT_PRI    lv_color_hex(0xFFFFFF)
+#define C_TEXT_SEC    lv_color_hex(0xCCCCCC)
+#define C_TEXT_HINT   lv_color_hex(0xAAAAAA)
+#define C_TEXT_DATE   lv_color_hex(0xCCCCCC)
+#define C_TEXT_TEMP   lv_color_hex(0xFFCC00)
 
-#define C_OK          lv_color_hex(0x4ECB71)   /* normal / green */
-#define C_WARN        lv_color_hex(0xE8A730)   /* attention / amber */
-#define C_ALARM       lv_color_hex(0xE05A5A)   /* alarm / red */
-#define C_ACCENT      lv_color_hex(0x7ECFFF)   /* title accent */
+#define C_OK          lv_color_hex(0x00FF00)   /* normal / green */
+#define C_WARN        lv_color_hex(0xFFFF00)   /* attention / yellow */
+#define C_ALARM       lv_color_hex(0xFF0000)   /* alarm / red */
+#define C_ACCENT      lv_color_hex(0x00FFFF)   /* title accent */
 
-#define C_BAR_BG      lv_color_hex(0x1E3040)
+#define C_BAR_BG      lv_color_hex(0x444444)
 
-#define C_BADGE_OK_BG    lv_color_hex(0x1A3020)
-#define C_BADGE_WARN_BG  lv_color_hex(0x2A1E10)
-#define C_BADGE_ALARM_BG lv_color_hex(0x2A1010)
+#define C_BADGE_OK_BG    lv_color_hex(0x004400)
+#define C_BADGE_WARN_BG  lv_color_hex(0x444400)
+#define C_BADGE_ALARM_BG lv_color_hex(0x440000)
 
-#define C_PW_ACTIVE   lv_color_hex(0x162840)
-#define C_PW_BORDER   lv_color_hex(0x7ECFFF)
-#define C_PW_FILLED   lv_color_hex(0x3A6A9A)
-#define C_PW_EMPTY    lv_color_hex(0x1E3A52)
+#define C_PW_ACTIVE   lv_color_hex(0x444444)
+#define C_PW_BORDER   lv_color_hex(0x00FFFF)
+#define C_PW_FILLED   lv_color_hex(0x888888)
+#define C_PW_EMPTY    lv_color_hex(0x555555)
 
 /* ── Gas status enum ─────────────────────────────── */
 typedef enum {

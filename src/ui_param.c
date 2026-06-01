@@ -68,6 +68,7 @@ static float          g_orig_val   = 0;
 static uint8_t        g_edit_dig[8];
 static uint8_t        g_orig_dig[8];
 static int            g_active_bit = 0;
+static int            g_top_idx    = 0;
 
 /* ══════════════════════════════════════════════════
  *  布局常量
@@ -76,7 +77,8 @@ static int            g_active_bit = 0;
 #define HINTBAR_H  22
 #define CONTENT_Y  TOPBAR_H
 #define CONTENT_H  (SCR_H - TOPBAR_H - HINTBAR_H)
-#define ROW_H      27
+#define VISIBLE_ROWS 5
+#define ROW_H      (CONTENT_H / VISIBLE_ROWS)
 
 #define CELL_W     36
 #define CELL_H     48
@@ -184,6 +186,13 @@ static void render_list(void)
     lv_obj_add_flag(dig_overlay, LV_OBJ_FLAG_HIDDEN);
 
     for (int i = 0; i < PARAM_COUNT; i++) {
+        if (i >= g_top_idx && i < g_top_idx + VISIBLE_ROWS) {
+            lv_obj_remove_flag(list_rows[i], LV_OBJ_FLAG_HIDDEN);
+            lv_obj_set_y(list_rows[i], CONTENT_Y + (i - g_top_idx) * ROW_H);
+        } else {
+            lv_obj_add_flag(list_rows[i], LV_OBJ_FLAG_HIDDEN);
+        }
+
         bool sel = (i == g_cursor);
         lv_obj_set_style_bg_color(list_rows[i],
             sel ? lv_color_hex(0x162840) : lv_color_hex(0x0E1620), 0);
@@ -376,8 +385,14 @@ void ui_param_key(ui_key_t key)
     switch (g_state) {
 
     case PS_BROWSE:
-        if      (key == KEY_UP)   g_cursor = (g_cursor > 0) ? g_cursor-1 : 0;
-        else if (key == KEY_DOWN) g_cursor = (g_cursor < PARAM_COUNT-1) ? g_cursor+1 : PARAM_COUNT-1;
+        if      (key == KEY_UP)   {
+            g_cursor = (g_cursor > 0) ? g_cursor-1 : 0;
+            if (g_cursor < g_top_idx) g_top_idx = g_cursor;
+        }
+        else if (key == KEY_DOWN) {
+            g_cursor = (g_cursor < PARAM_COUNT-1) ? g_cursor+1 : PARAM_COUNT-1;
+            if (g_cursor >= g_top_idx + VISIBLE_ROWS) g_top_idx = g_cursor - VISIBLE_ROWS + 1;
+        }
         else if (key == KEY_OK) {
             if (p->type == PARAM_NUM) {
                 g_orig_val = p->val; g_edit_val = p->val; g_state = PS_NUM_EDIT;
@@ -387,6 +402,8 @@ void ui_param_key(ui_key_t key)
                 g_active_bit = 0; g_state = PS_DIG_SELECT;
             }
         } else if (key == KEY_ESC) {
+            g_cursor = 0;
+            g_top_idx = 0;
             ui_goto(PAGE_MENU);
             return;
         }
@@ -574,8 +591,8 @@ static void build_list(lv_obj_t *parent)
         /* 当前值 */
         list_val[i] = lv_label_create(row);
         lv_obj_set_style_text_color(list_val[i], lv_color_hex(0x7ECFFF), 0);
-        lv_obj_set_style_text_font(list_val[i], FN10, 0);
-        lv_obj_align(list_val[i], LV_ALIGN_RIGHT_MID, -4, 0);
+        lv_obj_set_style_text_font(list_val[i], &lv_font_montserrat_16, 0);
+        lv_obj_align(list_val[i], LV_ALIGN_RIGHT_MID, -6, 0);
     }
 }
 
