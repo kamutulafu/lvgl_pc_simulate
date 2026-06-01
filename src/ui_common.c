@@ -25,6 +25,46 @@ static lv_obj_t *scr_param;
 
 ui_page_t cur_page = PAGE_HOME;
 
+static void ui_key_catcher_event_cb(lv_event_t *e);
+
+static lv_obj_t *ui_create_page(ui_page_t page)
+{
+    lv_obj_t **slot = NULL;
+    void (*create_cb)(lv_obj_t *parent) = NULL;
+
+    if      (page == PAGE_HOME)     { slot = &scr_home;     create_cb = ui_page_home_create; }
+    else if (page == PAGE_PASSWORD) { slot = &scr_password; create_cb = ui_page_password_create; }
+    else if (page == PAGE_MENU)     { slot = &scr_menu;     create_cb = ui_page_menu_create; }
+    else if (page == PAGE_PARAM)    { slot = &scr_param;    create_cb = ui_page_param_create; }
+
+    if ((slot == NULL) || (create_cb == NULL)) return NULL;
+
+    if (*slot == NULL) {
+        *slot = lv_obj_create(NULL);
+        ui_style_screen(*slot);
+        lv_obj_add_event_cb(*slot, ui_key_catcher_event_cb, LV_EVENT_KEY, NULL);
+
+        lv_group_t *group = lv_group_get_default();
+        if (group) lv_group_add_obj(group, *slot);
+
+        create_cb(*slot);
+    }
+
+    return *slot;
+}
+
+static void ui_release_inactive_pages(lv_obj_t *keep)
+{
+    lv_obj_t **screens[] = { &scr_home, &scr_password, &scr_menu, &scr_param };
+
+    for (uint32_t i = 0; i < sizeof(screens) / sizeof(screens[0]); i++) {
+        if ((*screens[i] != NULL) && (*screens[i] != keep)) {
+            lv_obj_delete(*screens[i]);
+            *screens[i] = NULL;
+        }
+    }
+}
+
 static void ui_key_catcher_event_cb(lv_event_t *e)
 {
     if (lv_event_get_code(e) != LV_EVENT_KEY) return;
@@ -219,14 +259,12 @@ const char *ui_status_text(gas_status_t s)
 
 void ui_goto(ui_page_t page)
 {
-    lv_obj_t *target = NULL;
-    if      (page == PAGE_HOME)     target = scr_home;
-    else if (page == PAGE_PASSWORD) target = scr_password;
-    else if (page == PAGE_MENU)     target = scr_menu;
-    else if (page == PAGE_PARAM)    target = scr_param;
+    lv_obj_t *target = ui_create_page(page);
 
     if (target) {
-        lv_scr_load_anim(target, LV_SCR_LOAD_ANIM_FADE_ON, 150, 0, false);
+        lv_screen_load(target);
+        ui_release_inactive_pages(target);
+        lv_obj_invalidate(target);
         lv_group_t *group = lv_group_get_default();
         if (group) lv_group_focus_obj(target);
         cur_page = page;
@@ -239,34 +277,10 @@ void ui_goto(ui_page_t page)
 
 void ui_init(void)
 {
-    scr_home     = lv_obj_create(NULL);
-    scr_password = lv_obj_create(NULL);
-    scr_menu     = lv_obj_create(NULL);
-    scr_param    = lv_obj_create(NULL);
-
-    ui_style_screen(scr_home);
-    ui_style_screen(scr_password);
-    ui_style_screen(scr_menu);
-    ui_style_screen(scr_param);
-
-    lv_obj_add_event_cb(scr_home, ui_key_catcher_event_cb, LV_EVENT_KEY, NULL);
-    lv_obj_add_event_cb(scr_password, ui_key_catcher_event_cb, LV_EVENT_KEY, NULL);
-    lv_obj_add_event_cb(scr_menu, ui_key_catcher_event_cb, LV_EVENT_KEY, NULL);
-    lv_obj_add_event_cb(scr_param, ui_key_catcher_event_cb, LV_EVENT_KEY, NULL);
-
-    lv_group_t *group = lv_group_get_default();
-    if (group) {
-        lv_group_add_obj(group, scr_home);
-        lv_group_add_obj(group, scr_password);
-        lv_group_add_obj(group, scr_menu);
-        lv_group_add_obj(group, scr_param);
-    }
-
-    ui_page_home_create(scr_home);
-    ui_page_password_create(scr_password);
-    ui_page_menu_create(scr_menu);
-    ui_page_param_create(scr_param);
-
+    scr_home     = NULL;
+    scr_password = NULL;
+    scr_menu     = NULL;
+    scr_param    = NULL;
     ui_goto(PAGE_HOME);
 }
 

@@ -18,7 +18,7 @@
 /* ── Password config ─────────────────────────────── */
 #define PW_DIGITS     5
 #define PW_MAX_FAIL   3
-#define PW_LOCK_SEC   30
+#define PW_LOCK_SEC   5
 
 static const uint8_t PW_CORRECT[PW_DIGITS] = { 0, 0, 0, 0, 1 };
 
@@ -48,6 +48,7 @@ static lv_obj_t *digit_row;               /* parent for shake anim */
 
 static lv_timer_t *lock_timer_obj = NULL;
 static lv_timer_t *success_timer_obj = NULL;
+static int digit_row_base_x = 0;
 
 /* ── Font shortcuts ──────────────────────────────── */
 #define FN10 (&lv_font_montserrat_10)
@@ -113,7 +114,12 @@ static void pw_set_status(const char *txt, lv_color_t col)
  * ───────────────────────────────────────────────── */
 static void pw_shake_anim_cb(void *var, int32_t v)
 {
-    lv_obj_set_x((lv_obj_t *)var, v);
+    lv_obj_set_x((lv_obj_t *)var, digit_row_base_x + v);
+}
+
+static void pw_shake_completed_cb(lv_anim_t *a)
+{
+    lv_obj_set_x((lv_obj_t *)a->var, digit_row_base_x);
 }
 
 static void pw_shake(void)
@@ -126,6 +132,7 @@ static void pw_shake(void)
     lv_anim_set_time(&a, 60);
     lv_anim_set_playback_time(&a, 60);
     lv_anim_set_repeat_count(&a, 3);
+    lv_anim_set_completed_cb(&a, pw_shake_completed_cb);
     lv_anim_start(&a);
 }
 
@@ -283,6 +290,7 @@ void ui_page_password_create(lv_obj_t *parent)
     /* ── Digit row container (used for shake animation) ── */
     int row_total_w = PW_DIGITS * DIGIT_W + (PW_DIGITS - 1) * DIGIT_GAP;
     int row_x = (SCR_W - row_total_w) / 2;
+    digit_row_base_x = row_x;
 
     digit_row = lv_obj_create(parent);
     lv_obj_set_size(digit_row, row_total_w, DIGIT_H + 24);  /* +24 for arrows */

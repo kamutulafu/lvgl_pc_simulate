@@ -83,6 +83,7 @@ void ui_refresh_home(void);
 
 /* ── Screen manager ──────────────────────────────── */
 typedef enum { PAGE_HOME, PAGE_PASSWORD, PAGE_MENU, PAGE_PARAM } ui_page_t;
+extern ui_page_t cur_page;
 void ui_goto(ui_page_t page);
 void ui_init(void);
 void ui_destroy(void);

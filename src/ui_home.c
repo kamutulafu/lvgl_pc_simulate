@@ -9,6 +9,7 @@
 
 #include "ui.h"
 #include <stdio.h>
+#include <string.h>
 
 /* ── live-update handles ─────────────────────────── */
 static lv_obj_t *h_val [5];   /* value labels          */
@@ -319,6 +320,10 @@ static void layout_5gas(lv_obj_t *parent)
  * ───────────────────────────────────────────────── */
 void ui_page_home_create(lv_obj_t *parent)
 {
+    memset(h_val, 0, sizeof(h_val));
+    memset(h_bar, 0, sizeof(h_bar));
+    memset(h_badge, 0, sizeof(h_badge));
+
     /* Top bar */
     ui_topbar_create(parent, "气体检测仪", "运行中",
                      lv_color_hex(0x1A3A20), C_OK);
@@ -343,6 +348,9 @@ void ui_refresh_home(void)
 {
     /* Re-read from sensor driver into g_gas[], then: */
     char buf[16];
+
+    if (cur_page != PAGE_HOME) return;
+
     for (int i = 0; i < g_gas_count; i++) {
         if (!h_val[i]) continue;
         snprintf(buf, sizeof(buf), "%.1f", g_gas[i].value);
@@ -354,7 +362,7 @@ void ui_refresh_home(void)
         if (h_bar[i]) {
             lv_obj_set_style_bg_color(h_bar[i], col, LV_PART_INDICATOR);
             lv_bar_set_value(h_bar[i],
-                             (int)(g_gas[i].value * 10), LV_ANIM_ON);
+                             (int)(g_gas[i].value * 10), LV_ANIM_OFF);
         }
         if (h_badge[i]) {
             lv_label_set_text(h_badge[i], ui_status_text(g_gas[i].status));

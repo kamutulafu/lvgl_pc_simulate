@@ -386,7 +386,10 @@ void ui_param_key(ui_key_t key)
                 memcpy(g_edit_dig, p->digits, p->digit_count);
                 g_active_bit = 0; g_state = PS_DIG_SELECT;
             }
-        } else if (key == KEY_ESC) ui_goto(PAGE_MENU);
+        } else if (key == KEY_ESC) {
+            ui_goto(PAGE_MENU);
+            return;
+        }
         break;
 
     case PS_NUM_EDIT:
