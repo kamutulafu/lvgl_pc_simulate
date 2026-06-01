@@ -333,7 +333,7 @@ void ui_page_home_create(lv_obj_t *parent)
     }
 
     /* Bottom hint */
-    ui_hintbar_create(parent, "", "", "OK 设置", "");
+    ui_hintbar_create(parent, "", "", "OK 菜单", "");
 }
 
 /* ─────────────────────────────────────────────────

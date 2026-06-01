@@ -87,44 +87,49 @@ lv_obj_t *ui_topbar_create(lv_obj_t *parent,
     lv_obj_set_style_pad_ver(bar, 0, 0);
     lv_obj_clear_flag(bar, LV_OBJ_FLAG_SCROLLABLE);
 
-    /* Title label */
-    lv_obj_t *lbl_title = lv_label_create(bar);
-    lv_label_set_text(lbl_title, title);
-    lv_obj_set_style_text_color(lbl_title, C_ACCENT, 0);
-    lv_obj_set_style_text_font(lbl_title, UI_FONT_CJK_14, 0);
-    lv_obj_set_width(lbl_title, 120);
-    lv_label_set_long_mode(lbl_title, LV_LABEL_LONG_CLIP);
-    lv_obj_align(lbl_title, LV_ALIGN_LEFT_MID, 0, 0);
+    bool home_status_only = (title && strcmp(title, "气体检测仪") == 0);
 
-    /* Right status cluster: time | temp | network | bluetooth | battery */
-    lv_obj_t *lbl_time = lv_label_create(bar);
-    lv_label_set_text(lbl_time, "12:00");
-    lv_obj_set_style_text_color(lbl_time, C_TEXT_DATE, 0);
-    lv_obj_set_style_text_font(lbl_time, &lv_font_montserrat_10, 0);
-    lv_obj_align(lbl_time, LV_ALIGN_RIGHT_MID, -124, 0);
-
+    /* Status cluster: home = time | temp | icons, other pages = title | temp | icons */
     lv_obj_t *lbl_temp = lv_label_create(bar);
     lv_label_set_text(lbl_temp, "24.3°C");
     lv_obj_set_style_text_color(lbl_temp, C_TEXT_TEMP, 0);
-    lv_obj_set_style_text_font(lbl_temp, &lv_font_montserrat_10, 0);
-    lv_obj_align(lbl_temp, LV_ALIGN_RIGHT_MID, -78, 0);
+    lv_obj_set_style_text_font(lbl_temp, &lv_font_montserrat_12, 0);
+
+    if (home_status_only) {
+        lv_obj_t *lbl_time = lv_label_create(bar);
+        lv_label_set_text(lbl_time, "12:00");
+        lv_obj_set_style_text_color(lbl_time, C_TEXT_DATE, 0);
+        lv_obj_set_style_text_font(lbl_time, &lv_font_montserrat_12, 0);
+        lv_obj_align(lbl_time, LV_ALIGN_LEFT_MID, 6, 0);
+        lv_obj_align(lbl_temp, LV_ALIGN_CENTER, 0, 0);
+    } else {
+        lv_obj_t *lbl_title = lv_label_create(bar);
+        lv_label_set_text(lbl_title, title);
+        lv_obj_set_style_text_color(lbl_title, C_ACCENT, 0);
+        lv_obj_set_style_text_font(lbl_title, UI_FONT_CJK_14, 0);
+        lv_obj_set_width(lbl_title, 120);
+        lv_label_set_long_mode(lbl_title, LV_LABEL_LONG_CLIP);  
+        lv_obj_align(lbl_title, LV_ALIGN_LEFT_MID, 0, 0);
+
+        lv_obj_align(lbl_temp, LV_ALIGN_CENTER, 0, 0);
+    }
 
     lv_obj_t *lbl_net = lv_label_create(bar);
     lv_label_set_text(lbl_net, LV_SYMBOL_WIFI);
     lv_obj_set_style_text_color(lbl_net, C_OK, 0);
-    lv_obj_set_style_text_font(lbl_net, &lv_font_montserrat_12, 0);
-    lv_obj_align(lbl_net, LV_ALIGN_RIGHT_MID, -42, 0);
+    lv_obj_set_style_text_font(lbl_net, &lv_font_montserrat_14, 0);
+    lv_obj_align(lbl_net, LV_ALIGN_RIGHT_MID, -50, 0);
 
     lv_obj_t *lbl_bt = lv_label_create(bar);
-    lv_label_set_text(lbl_bt, LV_SYMBOL_BLUETOOTH);
+    lv_label_set_text(lbl_bt, LV_SYMBOL_LOOP);
     lv_obj_set_style_text_color(lbl_bt, C_ACCENT, 0);
-    lv_obj_set_style_text_font(lbl_bt, &lv_font_montserrat_12, 0);
-    lv_obj_align(lbl_bt, LV_ALIGN_RIGHT_MID, -24, 0);
+    lv_obj_set_style_text_font(lbl_bt, &lv_font_montserrat_14, 0);
+    lv_obj_align(lbl_bt, LV_ALIGN_RIGHT_MID, -29, 0);
 
     lv_obj_t *lbl_bat = lv_label_create(bar);
     lv_label_set_text(lbl_bat, LV_SYMBOL_BATTERY_3);
     lv_obj_set_style_text_color(lbl_bat, C_OK, 0);
-    lv_obj_set_style_text_font(lbl_bat, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_font(lbl_bat, &lv_font_montserrat_18, 0);
     lv_obj_align(lbl_bat, LV_ALIGN_RIGHT_MID, -4, 0);
 
     return bar;
