@@ -48,7 +48,7 @@ static void menu_redraw(void)
         int item_idx = menu_top + i;
         if (item_idx < (int)MENU_COUNT) {
             lv_obj_remove_flag(menu_rows[i], LV_OBJ_FLAG_HIDDEN);
-            lv_label_set_text(menu_lbls[i], MENU_ITEMS[item_idx].label);
+            lv_label_set_text(menu_lbls[i], ui_get_text(MENU_ITEMS[item_idx].label));
             lv_label_set_text(menu_icons[i], MENU_ITEMS[item_idx].icon);
             
             bool sel = (item_idx == menu_sel);
@@ -104,7 +104,7 @@ void ui_page_menu_create(lv_obj_t *parent)
     menu_sel = 0;
     menu_top = 0;
 
-    ui_topbar_create(parent, "系统菜单", "已验证",
+    ui_topbar_create(parent, ui_get_text("系统菜单"), ui_get_text("已验证"),
                      C_BADGE_OK_BG, C_OK);
 
     int content_h = SCR_H - 30 - 22;  /* 188 px */
@@ -141,7 +141,7 @@ void ui_page_menu_create(lv_obj_t *parent)
         /* Label */
         lv_obj_t *lbl = lv_label_create(row);
         lv_obj_set_style_text_color(lbl, C_TEXT_PRI, 0);
-        lv_obj_set_style_text_font(lbl, UI_FONT_CJK_14, 0);
+        lv_obj_set_style_text_font(lbl, UI_FONT_CJK_24, 0);
         lv_obj_align(lbl, LV_ALIGN_LEFT_MID, 56, 0);
         menu_lbls[i] = lbl;
 
@@ -175,7 +175,7 @@ void ui_key_event(ui_key_t key)
 {
     switch (cur_page) {
     case PAGE_HOME:
-        if (key == KEY_OK) ui_goto(PAGE_PASSWORD);
+        ui_home_key(key);
         break;
     case PAGE_PASSWORD:
         ui_pw_key(key);
@@ -185,6 +185,9 @@ void ui_key_event(ui_key_t key)
         break;
     case PAGE_PARAM:
         ui_param_key(key);
+        break;
+    case PAGE_CURVE:
+        ui_curve_key(key);
         break;
     }
 }

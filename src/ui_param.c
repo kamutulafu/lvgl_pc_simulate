@@ -46,6 +46,7 @@ static param_t g_params[] = {
     { "背光亮度",      "%",   PARAM_NUM,    80.0f,  10, 100, 10.0f, {0}, 0 },
     { "访问密码",      "",    PARAM_DIGIT,   0,      0,   0,  0,    {0,8,5,2,1}, 5 },
     { "设备编号",      "",    PARAM_DIGIT,   0,      0,   0,  0,    {0,0,0,4,2}, 5 },
+    { "语言选择",      "",    PARAM_NUM,     0.0f,   0,   1,  1.0f, {0}, 0 },
 };
 #define PARAM_COUNT  ((int)(sizeof(g_params)/sizeof(g_params[0])))
 
@@ -97,6 +98,7 @@ static lv_obj_t *num_lbl_name   = NULL;
 static lv_obj_t *num_lbl_val    = NULL;
 static lv_obj_t *num_bar        = NULL;
 static lv_obj_t *num_lbl_range  = NULL;
+static lv_obj_t *num_lbl_orig   = NULL;
 static lv_obj_t *num_badge_bg   = NULL;
 static lv_obj_t *num_badge_lbl  = NULL;
 
@@ -121,13 +123,43 @@ static lv_obj_t *topbadge_lbl  = NULL;
 #define FN20 (&lv_font_montserrat_20)
 #define FN32 (&lv_font_montserrat_32)
 
+static void align_hint_slot(int i, const char *txt, bool has_up, bool has_dn)
+{
+    if (!hint_slots[i]) return;
+
+    if (!txt || txt[0] == '\0') {
+        lv_obj_set_width(hint_slots[i], 1);
+        return;
+    }
+
+    if (i == 3) {
+        lv_obj_set_width(hint_slots[i], 90);
+        lv_obj_set_style_text_align(hint_slots[i], LV_TEXT_ALIGN_LEFT, 0);
+        lv_obj_align(hint_slots[i], LV_ALIGN_LEFT_MID, 4, 0);
+    } else if (i == 2) {
+        lv_obj_set_width(hint_slots[i], 100);
+        lv_obj_set_style_text_align(hint_slots[i], LV_TEXT_ALIGN_RIGHT, 0);
+        lv_obj_align(hint_slots[i], LV_ALIGN_RIGHT_MID, -4, 0);
+    } else {
+        lv_obj_set_width(hint_slots[i], has_up && has_dn ? 70 : 120);
+        lv_obj_set_style_text_align(hint_slots[i], LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_align(hint_slots[i], LV_ALIGN_CENTER, has_up && has_dn && i == 0 ? -36 :
+                                                has_up && has_dn && i == 1 ?  36 : 0, 0);
+    }
+}
+
 /* ══════════════════════════════════════════════════
  *  Helpers
  * ══════════════════════════════════════════════════ */
 static void fmt_val(char *buf, size_t sz, const param_t *p, float v)
 {
-    if (p->step < 1.0f) snprintf(buf, sz, "%.1f %s", v, p->unit);
-    else                snprintf(buf, sz, "%.0f %s", v, p->unit);
+    if (strcmp(p->name, "语言选择") == 0 || strcmp(p->name, "Language") == 0) {
+        if (v == 0.0f) snprintf(buf, sz, "%s", ui_get_text("中文"));
+        else           snprintf(buf, sz, "English");
+    } else {
+        if (p->step < 1.0f) snprintf(buf, sz, "%.1f %s", v, p->unit);
+        else                snprintf(buf, sz, "%.0f %s", v, p->unit);
+    }
 }
 
 static void update_bar(lv_obj_t *bar, const param_t *p, float v)
@@ -159,10 +191,14 @@ static void update_hints(void)
         { "",        "",        "OK 保存",    "ESC 继续改"},  /* NUM_CONFIRM  */
         { "▲▼ 换位", "",        "OK 锁定位",  "ESC 退出"  },  /* DIG_SELECT   */
         { "▲ +1",   "▼ -1",    "OK 下一位",  "ESC 返回"  },  /* DIG_EDIT     */
-        { "",        "OK 保存", "",           "ESC 继续改"},  /* DIG_CONFIRM  */
+        { "",        "",        "OK 保存",    "ESC 继续改"},  /* DIG_CONFIRM  */
     };
     for (int i = 0; i < 4; i++)
-        if (hint_slots[i]) lv_label_set_text(hint_slots[i], tbl[g_state][i]);
+        if (hint_slots[i]) lv_label_set_text(hint_slots[i], ui_get_text(tbl[g_state][i]));
+    bool has_up = tbl[g_state][0][0] != '\0';
+    bool has_dn = tbl[g_state][1][0] != '\0';
+    for (int i = 0; i < 4; i++)
+        if (hint_slots[i]) align_hint_slot(i, ui_get_text(tbl[g_state][i]), has_up, has_dn);
 
     static const struct { const char *txt; uint32_t bg; uint32_t col; } badge_tbl[] = {
         { "浏览",   0x1E4A2A, 0x4ECB71 },
@@ -172,7 +208,7 @@ static void update_hints(void)
         { "编辑位", 0x1A3010, 0x7ACC40 },
         { "确认?",  0x3A1A1A, 0xE05A5A },
     };
-    set_topbadge(badge_tbl[g_state].txt,
+    set_topbadge(ui_get_text(badge_tbl[g_state].txt),
                  lv_color_hex(badge_tbl[g_state].bg),
                  lv_color_hex(badge_tbl[g_state].col));
 }
@@ -203,6 +239,7 @@ static void render_list(void)
         lv_obj_set_style_border_width(list_rows[i], sel ? 3 : 1, 0);
         lv_obj_set_style_text_color(list_name[i],
             sel ? lv_color_hex(0xFFFFFF) : lv_color_hex(0x88AACC), 0);
+        lv_label_set_text(list_name[i], ui_get_text(g_params[i].name));
         lv_label_set_text(list_mark[i], sel ? LV_SYMBOL_RIGHT : " ");
 
         /* 值字符串 */
@@ -231,13 +268,13 @@ static void render_num(void)
     bool confirm = (g_state == PS_NUM_CONFIRM);
     lv_color_t vcol = confirm ? C_ALARM : C_WARN;
 
-    lv_label_set_text(num_lbl_name, p->name);
+    lv_label_set_text(num_lbl_name, ui_get_text(p->name));
     lv_obj_set_style_text_color(num_lbl_val, vcol, 0);
 
     char buf[48];
     if (confirm) {
         char vb[24]; fmt_val(vb, sizeof(vb), p, g_edit_val);
-        snprintf(buf, sizeof(buf), "确认?  %s", vb);
+        snprintf(buf, sizeof(buf), "%s  %s", ui_get_text("确认?"), vb);
     } else {
         fmt_val(buf, sizeof(buf), p, g_edit_val);
     }
@@ -248,18 +285,40 @@ static void render_num(void)
         update_bar(num_bar, p, g_edit_val);
     }
 
+    bool is_lang = (strcmp(p->name, "语言选择") == 0 || strcmp(p->name, "Language") == 0);
+
     if (num_lbl_range) {
-        char rb[56];
-        snprintf(rb, sizeof(rb), "范围 %.0f - %.0f  步进 %.1f",
-                 p->val_min, p->val_max, p->step);
-        lv_label_set_text(num_lbl_range, rb);
-        lv_obj_set_style_text_color(num_lbl_range,
-            confirm ? C_ALARM : lv_color_hex(0x445A6A), 0);
+        if (is_lang) {
+            lv_obj_add_flag(num_lbl_range, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_remove_flag(num_lbl_range, LV_OBJ_FLAG_HIDDEN);
+            char rb[64];
+            snprintf(rb, sizeof(rb), ui_get_text("范围 %.0f - %.0f  步进 %.1f"),
+                     p->val_min, p->val_max, p->step);
+            lv_label_set_text(num_lbl_range, rb);
+            lv_obj_set_style_text_color(num_lbl_range,
+                confirm ? C_ALARM : lv_color_hex(0x88AACC), 0);
+        }
+    }
+
+    if (num_lbl_orig) {
+        if (is_lang) {
+            lv_obj_add_flag(num_lbl_orig, LV_OBJ_FLAG_HIDDEN);
+        } else {
+            lv_obj_remove_flag(num_lbl_orig, LV_OBJ_FLAG_HIDDEN);
+            char ob[64];
+            char vb[24];
+            fmt_val(vb, sizeof(vb), p, g_orig_val);
+            snprintf(ob, sizeof(ob), "%s %s", ui_get_text("原值:"), vb);
+            lv_label_set_text(num_lbl_orig, ob);
+            lv_obj_set_style_text_color(num_lbl_orig,
+                confirm ? C_ALARM : lv_color_hex(0x88AACC), 0);
+        }
     }
 
     /* Badge */
     if (num_badge_lbl) {
-        const char *bt = confirm ? "确认保存?" : "数值编辑";
+        const char *bt = confirm ? ui_get_text("确认保存?") : ui_get_text("数值编辑");
         lv_color_t  bc = confirm ? C_ALARM : C_WARN;
         lv_color_t  bb = confirm ? lv_color_hex(0x3A1A1A) : lv_color_hex(0x3A2A10);
         lv_label_set_text(num_badge_lbl, bt);
@@ -281,8 +340,8 @@ static void render_dig(void)
     bool sel_mode= (g_state == PS_DIG_SELECT);
     bool edit_mode=(g_state == PS_DIG_EDIT);
 
-    char title[48];
-    snprintf(title, sizeof(title), "编辑: %s", p->name);
+    char title[64];
+    snprintf(title, sizeof(title), ui_get_text("编辑: %s"), ui_get_text(p->name));
     lv_label_set_text(dig_lbl_name, title);
 
     for (int i = 0; i < (int)p->digit_count; i++) {
@@ -332,13 +391,13 @@ static void render_dig(void)
     if (dig_lbl_hint) {
         if (confirm) {
             char hb[32];
-            int off = snprintf(hb, sizeof(hb), "值: ");
+            int off = snprintf(hb, sizeof(hb), "%s", ui_get_text("值: "));
             for (int i = 0; i < (int)p->digit_count && off < (int)sizeof(hb); i++)
                 off += snprintf(hb + off, sizeof(hb) - off, "%d", g_edit_dig[i]);
             lv_label_set_text(dig_lbl_hint, hb);
         } else {
-            const char *ht = sel_mode ? "UP/DOWN 选择位   OK 进入编辑该位"
-                                      : "UP/DOWN 修改当前位数字   OK 移到下一位";
+            const char *ht = sel_mode ? ui_get_text("UP/DOWN 选择位   OK 进入编辑该位")
+                                      : ui_get_text("UP/DOWN 修改当前位数字   OK 移到下一位");
             lv_label_set_text(dig_lbl_hint, ht);
         }
     }
@@ -351,9 +410,9 @@ static void render_dig(void)
     /* Badge */
     if (dig_badge_lbl) {
         const char *bt; lv_color_t bc, bb;
-        if (confirm)       { bt="确认?";     bc=C_WARN;              bb=lv_color_hex(0x3A2A10); }
-        else if (sel_mode) { bt="选择位";    bc=lv_color_hex(0xAA88FF); bb=lv_color_hex(0x201040); }
-        else               { bt="编辑位";    bc=lv_color_hex(0x7ACC40); bb=lv_color_hex(0x1A3010); }
+        if (confirm)       { bt=ui_get_text("确认?");     bc=C_WARN;              bb=lv_color_hex(0x3A2A10); }
+        else if (sel_mode) { bt=ui_get_text("选择位");    bc=lv_color_hex(0xAA88FF); bb=lv_color_hex(0x201040); }
+        else               { bt=ui_get_text("编辑位");    bc=lv_color_hex(0x7ACC40); bb=lv_color_hex(0x1A3010); }
         lv_label_set_text(dig_badge_lbl, bt);
         lv_obj_set_style_text_color(dig_badge_lbl, bc, 0);
         if (dig_badge_bg) lv_obj_set_style_bg_color(dig_badge_bg, bb, 0);
@@ -421,7 +480,15 @@ void ui_param_key(ui_key_t key)
         break;
 
     case PS_NUM_CONFIRM:
-        if (key == KEY_OK) { p->val = g_edit_val; g_state = PS_BROWSE; }
+        if (key == KEY_OK) {
+            p->val = g_edit_val;
+            g_state = PS_BROWSE;
+            if (strcmp(p->name, "语言选择") == 0 || strcmp(p->name, "Language") == 0) {
+                g_lang = (ui_lang_t)p->val;
+                ui_refresh_current_page();
+                return;
+            }
+        }
         else if (key == KEY_ESC) g_state = PS_NUM_EDIT;
         break;
 
@@ -493,7 +560,9 @@ static void build_chrome(lv_obj_t *parent)
     lv_obj_clear_flag(tb, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t *tl = lv_label_create(tb);
-    lv_label_set_text(tl, LV_SYMBOL_SETTINGS " 参数设置");
+    char tb_title_buf[64];
+    snprintf(tb_title_buf, sizeof(tb_title_buf), "%s %s", LV_SYMBOL_SETTINGS, ui_get_text("参数设置"));
+    lv_label_set_text(tl, tb_title_buf);
     lv_obj_set_style_text_color(tl, C_ACCENT, 0);
     lv_obj_set_style_text_font(tl, UI_FONT_CJK_14, 0);
     lv_obj_align(tl, LV_ALIGN_LEFT_MID, 0, 0);
@@ -511,7 +580,7 @@ static void build_chrome(lv_obj_t *parent)
     lv_obj_clear_flag(tbadge, LV_OBJ_FLAG_SCROLLABLE);
 
     topbadge_lbl = lv_label_create(tbadge);
-    lv_label_set_text(topbadge_lbl, "浏览");
+    lv_label_set_text(topbadge_lbl, ui_get_text("浏览"));
     lv_obj_set_style_text_color(topbadge_lbl, C_OK, 0);
     lv_obj_set_style_text_font(topbadge_lbl, UI_FONT_CJK_14, 0);
     lv_obj_center(topbadge_lbl);
@@ -531,9 +600,10 @@ static void build_chrome(lv_obj_t *parent)
     for (int i = 0; i < 4; i++) {
         hint_slots[i] = lv_label_create(hb);
         lv_label_set_text(hint_slots[i], "");
-        lv_obj_set_style_text_color(hint_slots[i], lv_color_hex(0x556A7A), 0);
+        lv_obj_set_style_text_color(hint_slots[i], lv_color_hex(0x88AACC), 0);
         lv_obj_set_style_text_font(hint_slots[i], UI_FONT_CJK_14, 0);
-        lv_obj_align(hint_slots[i], LV_ALIGN_LEFT_MID, 4 + i*78, 0);
+        lv_label_set_long_mode(hint_slots[i], LV_LABEL_LONG_CLIP);
+        align_hint_slot(i, "", false, false);
     }
 }
 
@@ -564,7 +634,7 @@ static void build_list(lv_obj_t *parent)
         list_name[i] = lv_label_create(row);
         lv_label_set_text(list_name[i], g_params[i].name);
         lv_obj_set_style_text_color(list_name[i], lv_color_hex(0x88AACC), 0);
-        lv_obj_set_style_text_font(list_name[i], UI_FONT_CJK_14, 0);
+        lv_obj_set_style_text_font(list_name[i], UI_FONT_CJK_24, 0);
         lv_obj_align(list_name[i], LV_ALIGN_LEFT_MID, 14, 0);
 
         /* 类型胶囊 */
@@ -581,17 +651,17 @@ static void build_list(lv_obj_t *parent)
         lv_obj_set_style_pad_ver(tb, 0, 0);
         lv_obj_clear_flag(tb, LV_OBJ_FLAG_SCROLLABLE);
         lv_obj_t *tl = lv_label_create(tb);
-        lv_label_set_text(tl, g_params[i].type == PARAM_NUM ? "数值" : "位码");
+        lv_label_set_text(tl, g_params[i].type == PARAM_NUM ? ui_get_text("数值") : ui_get_text("位码"));
         lv_obj_set_style_text_color(tl,
             g_params[i].type == PARAM_NUM
             ? lv_color_hex(0x5588AA) : lv_color_hex(0x8866CC), 0);
-        lv_obj_set_style_text_font(tl, UI_FONT_CJK_14, 0);
+        lv_obj_set_style_text_font(tl, UI_FONT_CJK_24, 0);
         lv_obj_center(tl);
 
         /* 当前值 */
         list_val[i] = lv_label_create(row);
         lv_obj_set_style_text_color(list_val[i], lv_color_hex(0x7ECFFF), 0);
-        lv_obj_set_style_text_font(list_val[i], &lv_font_montserrat_16, 0);
+        lv_obj_set_style_text_font(list_val[i], UI_FONT_CJK_24, 0);
         lv_obj_align(list_val[i], LV_ALIGN_RIGHT_MID, -6, 0);
     }
 }
@@ -612,7 +682,7 @@ static void build_num_overlay(lv_obj_t *parent)
     num_lbl_name = lv_label_create(num_overlay);
     lv_label_set_text(num_lbl_name, "");
     lv_obj_set_style_text_color(num_lbl_name, C_TEXT_SEC, 0);
-    lv_obj_set_style_text_font(num_lbl_name, UI_FONT_CJK_14, 0);
+    lv_obj_set_style_text_font(num_lbl_name, UI_FONT_CJK_24, 0);
     lv_obj_align(num_lbl_name, LV_ALIGN_TOP_MID, 0, 10);
 
     /* 上箭头装饰 */
@@ -626,7 +696,7 @@ static void build_num_overlay(lv_obj_t *parent)
     num_lbl_val = lv_label_create(num_overlay);
     lv_label_set_text(num_lbl_val, "---");
     lv_obj_set_style_text_color(num_lbl_val, C_WARN, 0);
-    lv_obj_set_style_text_font(num_lbl_val, FN32, 0);
+    lv_obj_set_style_text_font(num_lbl_val, UI_FONT_CJK_24, 0);
     lv_obj_align(num_lbl_val, LV_ALIGN_TOP_MID, 0, 48);
 
     /* 下箭头装饰 */
@@ -648,19 +718,19 @@ static void build_num_overlay(lv_obj_t *parent)
     /* 范围说明 */
     num_lbl_range = lv_label_create(num_overlay);
     lv_label_set_text(num_lbl_range, "");
-    lv_obj_set_style_text_color(num_lbl_range, lv_color_hex(0x445A6A), 0);
+    lv_obj_set_style_text_color(num_lbl_range, lv_color_hex(0x88AACC), 0);
     lv_obj_set_style_text_font(num_lbl_range, UI_FONT_CJK_14, 0);
     lv_obj_align(num_lbl_range, LV_ALIGN_TOP_MID, 0, 128);
 
     /* 原值标签 */
-    lv_obj_t *ol = lv_label_create(num_overlay);
-    lv_label_set_text(ol, "原值:");
-    lv_obj_set_style_text_color(ol, lv_color_hex(0x2A4A6A), 0);
-    lv_obj_set_style_text_font(ol, UI_FONT_CJK_14, 0);
-    lv_obj_align(ol, LV_ALIGN_TOP_LEFT, 20, 148);
+    num_lbl_orig = lv_label_create(num_overlay);
+    lv_label_set_text(num_lbl_orig, ui_get_text("原值:"));
+    lv_obj_set_style_text_color(num_lbl_orig, lv_color_hex(0x88AACC), 0);
+    lv_obj_set_style_text_font(num_lbl_orig, UI_FONT_CJK_14, 0);
+    lv_obj_align(num_lbl_orig, LV_ALIGN_TOP_LEFT, 20, 148);
 
     /* 状态徽标 */
-    make_badge(num_overlay, -4, "数值编辑",
+    make_badge(num_overlay, -4, ui_get_text("数值编辑"),
                lv_color_hex(0x3A2A10), C_WARN,
                &num_badge_bg, &num_badge_lbl);
 }
@@ -692,7 +762,7 @@ static void build_dig_overlay(lv_obj_t *parent)
     dig_lbl_name = lv_label_create(title_bar);
     lv_label_set_text(dig_lbl_name, "");
     lv_obj_set_style_text_color(dig_lbl_name, C_TEXT_SEC, 0);
-    lv_obj_set_style_text_font(dig_lbl_name, UI_FONT_CJK_14, 0);
+    lv_obj_set_style_text_font(dig_lbl_name, UI_FONT_CJK_24, 0);
     lv_obj_align(dig_lbl_name, LV_ALIGN_LEFT_MID, 10, 0);
 
     /* 5个位格 */
@@ -732,11 +802,11 @@ static void build_dig_overlay(lv_obj_t *parent)
 
         /* 位序号 */
         lv_obj_t *pl = lv_label_create(dig_overlay);
-        char pb[5]; snprintf(pb, sizeof(pb), "位%d", i+1);
+        char pb[16]; snprintf(pb, sizeof(pb), ui_get_text("位%d"), i+1);
         lv_label_set_text(pl, pb);
-        lv_obj_set_style_text_color(pl, lv_color_hex(0x2A4A6A), 0);
+        lv_obj_set_style_text_color(pl, lv_color_hex(0x88AACC), 0);
         lv_obj_set_style_text_font(pl, UI_FONT_CJK_14, 0);
-        lv_obj_set_pos(pl, cx + 4, cy + CELL_H + 14);
+        lv_obj_align_to(pl, dig_cells[i], LV_ALIGN_OUT_BOTTOM_MID, 0, 6);
 
         /* 下箭头 */
         dig_arrow_d[i] = lv_label_create(dig_overlay);
@@ -750,7 +820,7 @@ static void build_dig_overlay(lv_obj_t *parent)
     /* 操作提示 */
     dig_lbl_hint = lv_label_create(dig_overlay);
     lv_label_set_text(dig_lbl_hint, "");
-    lv_obj_set_style_text_color(dig_lbl_hint, lv_color_hex(0x445A6A), 0);
+    lv_obj_set_style_text_color(dig_lbl_hint, lv_color_hex(0x88AACC), 0);
     lv_obj_set_style_text_font(dig_lbl_hint, UI_FONT_CJK_14, 0);
     lv_obj_align(dig_lbl_hint, LV_ALIGN_TOP_MID, 0, 152);
 
@@ -768,7 +838,7 @@ static void build_dig_overlay(lv_obj_t *parent)
     lv_obj_add_flag(dig_confirm_bar, LV_OBJ_FLAG_HIDDEN);
 
     dig_confirm_lbl = lv_label_create(dig_confirm_bar);
-    lv_label_set_text(dig_confirm_lbl, "OK 保存   ESC 取消");
+    lv_label_set_text(dig_confirm_lbl, ui_get_text("OK 保存   ESC 取消"));
     lv_obj_set_style_text_color(dig_confirm_lbl, C_WARN, 0);
     lv_obj_set_style_text_font(dig_confirm_lbl, UI_FONT_CJK_14, 0);
     lv_obj_center(dig_confirm_lbl);
@@ -781,8 +851,33 @@ static void build_dig_overlay(lv_obj_t *parent)
 void ui_page_param_create(lv_obj_t *parent)
 {
     g_state      = PS_BROWSE;
-    g_cursor     = 0;
     g_active_bit = 0;
+
+    memset(list_rows, 0, sizeof(list_rows));
+    memset(list_name, 0, sizeof(list_name));
+    memset(list_val, 0, sizeof(list_val));
+    memset(list_mark, 0, sizeof(list_mark));
+    num_overlay = NULL;
+    num_lbl_name = NULL;
+    num_lbl_val = NULL;
+    num_bar = NULL;
+    num_lbl_range = NULL;
+    num_lbl_orig = NULL;
+    num_badge_bg = NULL;
+    num_badge_lbl = NULL;
+    dig_overlay = NULL;
+    dig_lbl_name = NULL;
+    memset(dig_cells, 0, sizeof(dig_cells));
+    memset(dig_digit, 0, sizeof(dig_digit));
+    memset(dig_arrow_u, 0, sizeof(dig_arrow_u));
+    memset(dig_arrow_d, 0, sizeof(dig_arrow_d));
+    dig_lbl_hint = NULL;
+    dig_badge_bg = NULL;
+    dig_badge_lbl = NULL;
+    dig_confirm_bar = NULL;
+    dig_confirm_lbl = NULL;
+    memset(hint_slots, 0, sizeof(hint_slots));
+    topbadge_lbl = NULL;
 
     build_chrome(parent);
     build_list(parent);

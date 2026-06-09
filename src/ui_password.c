@@ -161,7 +161,7 @@ static void pw_lock_timer_cb(lv_timer_t *t)
         lv_obj_add_flag(lock_icon,       LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(lbl_countdown,   LV_OBJ_FLAG_HIDDEN);
         lv_obj_remove_flag(digit_row,    LV_OBJ_FLAG_HIDDEN);
-        pw_set_status("请输入密码", C_TEXT_HINT);
+        pw_set_status(ui_get_text("请输入密码"), C_TEXT_HINT);
 
         lv_timer_del(lock_timer_obj);
         lock_timer_obj = NULL;
@@ -190,7 +190,7 @@ static void pw_start_lock(void)
     char buf[16];
     snprintf(buf, sizeof(buf), "%d s", pw_lock_secs);
     lv_label_set_text(lbl_countdown, buf);
-    pw_set_status("连续错误 3 次，请等待", C_ALARM);
+    pw_set_status(ui_get_text("连续错误 3 次，请等待"), C_ALARM);
 
     lock_timer_obj = lv_timer_create(pw_lock_timer_cb, 1000, NULL);
 }
@@ -219,7 +219,7 @@ static void pw_validate(void)
             pw_start_lock();
         } else {
             char buf[40];
-            snprintf(buf, sizeof(buf), "密码错误，还剩 %d 次", PW_MAX_FAIL - pw_fail_count);
+            snprintf(buf, sizeof(buf), ui_get_text("密码错误，还剩 %d 次"), PW_MAX_FAIL - pw_fail_count);
             pw_set_status(buf, C_WARN);
             pw_redraw_all();
         }
@@ -259,7 +259,7 @@ void ui_pw_key(ui_key_t key)
         pw_pos = 0;
         pw_fail_count = 0;
         pw_redraw_all();
-        pw_set_status("请输入密码", C_TEXT_HINT);
+        pw_set_status(ui_get_text("请输入密码"), C_TEXT_HINT);
         ui_goto(PAGE_HOME);
         break;
     }
@@ -282,9 +282,9 @@ void ui_page_password_create(lv_obj_t *parent)
 
     /* ── Prompt label ─────────────────────────────── */
     lv_obj_t *prompt = lv_label_create(parent);
-    lv_label_set_text(prompt, "系统设置  访问验证");
+    lv_label_set_text(prompt, ui_get_text("系统设置  访问验证"));
     lv_obj_set_style_text_color(prompt, C_TEXT_SEC, 0);
-    lv_obj_set_style_text_font(prompt, UI_FONT_CJK_14, 0);
+    lv_obj_set_style_text_font(prompt, UI_FONT_CJK_24, 0);
     lv_obj_align(prompt, LV_ALIGN_TOP_MID, 0, 46);
 
     /* ── Digit row container (used for shake animation) ── */
@@ -338,11 +338,11 @@ void ui_page_password_create(lv_obj_t *parent)
 
         /* Position label (bit N) */
         lv_obj_t *pos_lbl = lv_label_create(digit_row);
-        char pb[6];
-        snprintf(pb, sizeof(pb), "位%d", i+1);
+        char pb[16];
+        snprintf(pb, sizeof(pb), ui_get_text("位%d"), i+1);
         lv_label_set_text(pos_lbl, pb);
         lv_obj_set_style_text_color(pos_lbl, C_TEXT_HINT, 0);
-        lv_obj_set_style_text_font(pos_lbl, UI_FONT_CJK_14, 0);
+        lv_obj_set_style_text_font(pos_lbl, UI_FONT_CJK_24, 0);
         lv_obj_set_pos(pos_lbl, cx + 5, 12 + DIGIT_H + 14);
     }
 
@@ -351,9 +351,9 @@ void ui_page_password_create(lv_obj_t *parent)
 
     /* ── Status / fail message ────────────────────── */
     lbl_status = lv_label_create(parent);
-    lv_label_set_text(lbl_status, "请输入密码");
+    lv_label_set_text(lbl_status, ui_get_text("请输入密码"));
     lv_obj_set_style_text_color(lbl_status, C_TEXT_HINT, 0);
-    lv_obj_set_style_text_font(lbl_status, UI_FONT_CJK_14, 0);
+    lv_obj_set_style_text_font(lbl_status, UI_FONT_CJK_24, 0);
     lv_obj_align(lbl_status, LV_ALIGN_TOP_MID, 0, 162);
 
     /* ── Lock icon (hidden by default) ───────────── */

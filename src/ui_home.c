@@ -11,6 +11,9 @@
 #include <stdio.h>
 #include <string.h>
 
+int g_selected_gas = -1;
+static lv_obj_t *card_objs[5];
+
 /* ── live-update handles ─────────────────────────── */
 static lv_obj_t *h_val [5];   /* value labels          */
 static lv_obj_t *h_bar [5];   /* lv_bar indicators     */
@@ -19,6 +22,54 @@ static lv_obj_t *h_badge[5];  /* status badge labels   */
 #define CONTENT_Y   30
 #define CONTENT_H   188
 #define PAD         5
+
+static void home_update_selection(void)
+{
+    for (int i = 0; i < g_gas_count; i++) {
+        if (!card_objs[i]) continue;
+        if (i == g_selected_gas) {
+            lv_obj_set_style_border_color(card_objs[i], C_PW_BORDER, 0);
+            lv_obj_set_style_border_width(card_objs[i], 2, 0);
+        } else {
+            // Requirement 2: do not show selection borders on unselected cards to avoid conflict
+            lv_obj_set_style_border_color(card_objs[i], C_BORDER, 0);
+            lv_obj_set_style_border_width(card_objs[i], 1, 0);
+        }
+    }
+}
+
+void ui_home_key(ui_key_t key)
+{
+    if (key == KEY_UP) {
+        if (g_selected_gas == -1) {
+            g_selected_gas = g_gas_count - 1;
+        } else {
+            g_selected_gas = (g_selected_gas - 1 + g_gas_count) % g_gas_count;
+        }
+        home_update_selection();
+    }
+    else if (key == KEY_DOWN) {
+        if (g_selected_gas == -1) {
+            g_selected_gas = 0;
+        } else {
+            g_selected_gas = (g_selected_gas + 1) % g_gas_count;
+        }
+        home_update_selection();
+    }
+    else if (key == KEY_OK) {
+        if (g_selected_gas == -1) {
+            ui_goto(PAGE_PASSWORD);
+        } else {
+            ui_goto(PAGE_CURVE);
+        }
+    }
+    else if (key == KEY_ESC) {
+        if (g_selected_gas != -1) {
+            g_selected_gas = -1;
+            home_update_selection();
+        }
+    }
+}
 
 /* ── common font shortcuts ─────────────────────────*/
 #define FN10  (&lv_font_montserrat_10)
@@ -42,13 +93,14 @@ static void card_add_content(lv_obj_t *card, int idx,
                               int badge_y, bool show_name)
 {
     gas_ch_t *g = &g_gas[idx];
-    lv_color_t col = ui_status_color(g->status);
+    // Requirement 2: green for normal/warn, red for alarm
+    lv_color_t col = (g->status == GAS_ALARM) ? C_ALARM : C_OK;
 
     if (show_name) {
         lv_obj_t *lbl_name = lv_label_create(card);
-        lv_label_set_text(lbl_name, g->name);
+        lv_label_set_text(lbl_name, ui_get_text(g->name));
         lv_obj_set_style_text_color(lbl_name, C_TEXT_SEC, 0);
-        lv_obj_set_style_text_font(lbl_name, UI_FONT_CJK_14, 0);
+        lv_obj_set_style_text_font(lbl_name, UI_FONT_CJK_24, 0);
         lv_obj_align(lbl_name, LV_ALIGN_TOP_LEFT, 6, name_y);
     }
 
@@ -81,24 +133,8 @@ static void card_add_content(lv_obj_t *card, int idx,
     lv_bar_set_value(bar, (int)(g->value * 10), LV_ANIM_OFF);
     h_bar[idx] = bar;
 
-    /* Status badge */
-    lv_obj_t *badge_bg = lv_obj_create(card);
-    lv_obj_set_size(badge_bg, LV_SIZE_CONTENT, 14);
-    lv_obj_align(badge_bg, LV_ALIGN_TOP_RIGHT, -4, badge_y);
-    lv_obj_set_style_bg_color(badge_bg, ui_status_badge_bg(g->status), 0);
-    lv_obj_set_style_bg_opa(badge_bg, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_width(badge_bg, 0, 0);
-    lv_obj_set_style_radius(badge_bg, 7, 0);
-    lv_obj_set_style_pad_hor(badge_bg, 5, 0);
-    lv_obj_set_style_pad_ver(badge_bg, 0, 0);
-    lv_obj_clear_flag(badge_bg, LV_OBJ_FLAG_SCROLLABLE);
-
-    lv_obj_t *lbl_badge = lv_label_create(badge_bg);
-    lv_label_set_text(lbl_badge, ui_status_text(g->status));
-    lv_obj_set_style_text_color(lbl_badge, col, 0);
-    lv_obj_set_style_text_font(lbl_badge, UI_FONT_CJK_14, 0);
-    lv_obj_center(lbl_badge);
-    h_badge[idx] = lbl_badge;
+    /* Status badge - REMOVED per user requirement 1 */
+    h_badge[idx] = NULL;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -107,13 +143,14 @@ static void card_add_content(lv_obj_t *card, int idx,
 static void layout_1gas(lv_obj_t *parent)
 {
     gas_ch_t *g = &g_gas[0];
-    lv_color_t col = ui_status_color(g->status);
+    // Requirement 2: green for normal/warn, red for alarm
+    lv_color_t col = (g->status == GAS_ALARM) ? C_ALARM : C_OK;
 
     /* Gas name */
     lv_obj_t *ln = lv_label_create(parent);
-    lv_label_set_text(ln, g->name);
+    lv_label_set_text(ln, ui_get_text(g->name));
     lv_obj_set_style_text_color(ln, C_TEXT_SEC, 0);
-    lv_obj_set_style_text_font(ln, UI_FONT_CJK_14, 0);
+    lv_obj_set_style_text_font(ln, UI_FONT_CJK_24, 0);
     lv_obj_align(ln, LV_ALIGN_TOP_MID, 0, CONTENT_Y + 18);
 
     /* Giant value */
@@ -145,13 +182,13 @@ static void layout_1gas(lv_obj_t *parent)
     h_bar[0] = bar;
 
     /* Min / max / alarm row */
-    const char *labels[3] = { "最低", "最高", "报警值" };
+    const char *labels[3] = { ui_get_text("最低"), ui_get_text("最高"), ui_get_text("报警值") };
     float vals[3] = { g->value * 0.6f, g->value * 1.8f, g->alarm_hi };
     for (int i = 0; i < 3; i++) {
         lv_obj_t *ll = lv_label_create(parent);
         lv_label_set_text(ll, labels[i]);
         lv_obj_set_style_text_color(ll, C_TEXT_HINT, 0);
-        lv_obj_set_style_text_font(ll, UI_FONT_CJK_14, 0);
+        lv_obj_set_style_text_font(ll, UI_FONT_CJK_24, 0);
         lv_obj_align(ll, LV_ALIGN_TOP_LEFT, 30 + i * 90, CONTENT_Y + 124);
 
         char vb[12];
@@ -164,23 +201,8 @@ static void layout_1gas(lv_obj_t *parent)
         lv_obj_align(lv2, LV_ALIGN_TOP_LEFT, 30 + i * 90, CONTENT_Y + 137);
     }
 
-    /* Badge */
-    lv_obj_t *bb = lv_obj_create(parent);
-    lv_obj_set_size(bb, LV_SIZE_CONTENT, 16);
-    lv_obj_align(bb, LV_ALIGN_TOP_MID, 0, CONTENT_Y + 92);
-    lv_obj_set_style_bg_color(bb, ui_status_badge_bg(g->status), 0);
-    lv_obj_set_style_bg_opa(bb, LV_OPA_COVER, 0);
-    lv_obj_set_style_border_width(bb, 0, 0);
-    lv_obj_set_style_radius(bb, 8, 0);
-    lv_obj_set_style_pad_hor(bb, 8, 0);
-    lv_obj_set_style_pad_ver(bb, 0, 0);
-    lv_obj_clear_flag(bb, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_t *lb = lv_label_create(bb);
-    lv_label_set_text(lb, ui_status_text(g->status));
-    lv_obj_set_style_text_color(lb, col, 0);
-    lv_obj_set_style_text_font(lb, UI_FONT_CJK_14, 0);
-    lv_obj_center(lb);
-    h_badge[0] = lb;
+    /* Status badge - REMOVED per user requirement 1 */
+    h_badge[0] = NULL;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -192,6 +214,7 @@ static void layout_2gas(lv_obj_t *parent)
     for (int i = 0; i < 2; i++) {
         int y = CONTENT_Y + i * row_h;
         lv_obj_t *card = lv_obj_create(parent);
+        card_objs[i] = card;
         lv_obj_set_pos(card, 0, y);
         lv_obj_set_size(card, SCR_W, row_h);
         lv_obj_set_style_bg_color(card, C_BG_SCREEN, 0);
@@ -204,9 +227,9 @@ static void layout_2gas(lv_obj_t *parent)
 
         /* Name */
         lv_obj_t *ln = lv_label_create(card);
-        lv_label_set_text(ln, g_gas[i].name);
+        lv_label_set_text(ln, ui_get_text(g_gas[i].name));
         lv_obj_set_style_text_color(ln, C_TEXT_SEC, 0);
-        lv_obj_set_style_text_font(ln, UI_FONT_CJK_14, 0);
+        lv_obj_set_style_text_font(ln, UI_FONT_CJK_24, 0);
         lv_obj_align(ln, LV_ALIGN_TOP_LEFT, 14, 10);
 
         card_add_content(card, i, FN32, 0, 22, 68, 4, 10, false);
@@ -224,13 +247,13 @@ static void layout_3gas(lv_obj_t *parent)
 
     /* Big card */
     lv_color_t big_bg = (g_gas[0].status == GAS_ALARM) ? C_BG_CARD_ALT : C_BG_CARD;
-    lv_color_t big_bd = (g_gas[0].status == GAS_ALARM) ? C_BORDER_ALARM : C_BORDER;
     lv_obj_t *big = ui_card_create(parent, PAD, CONTENT_Y + PAD,
-                                   SCR_W - PAD*2, big_h, big_bg, big_bd);
+                                   SCR_W - PAD*2, big_h, big_bg, C_BORDER);
+    card_objs[0] = big;
     lv_obj_t *ln = lv_label_create(big);
-    lv_label_set_text(ln, g_gas[0].name);
+    lv_label_set_text(ln, ui_get_text(g_gas[0].name));
     lv_obj_set_style_text_color(ln, C_TEXT_SEC, 0);
-    lv_obj_set_style_text_font(ln, UI_FONT_CJK_14, 0);
+    lv_obj_set_style_text_font(ln, UI_FONT_CJK_24, 0);
     lv_obj_align(ln, LV_ALIGN_TOP_LEFT, 6, 6);
     card_add_content(big, 0, FN48, 0, 20, 80, 5, 6, false);
 
@@ -239,6 +262,7 @@ static void layout_3gas(lv_obj_t *parent)
         int x = PAD + (i-1) * (sml_w + PAD);
         int y = CONTENT_Y + PAD + big_h + PAD;
         lv_obj_t *c = ui_card_create(parent, x, y, sml_w, sml_h, C_BG_CARD, C_BORDER);
+        card_objs[i] = c;
         lv_obj_t *ls = lv_label_create(c);
         lv_label_set_text(ls, g_gas[i].symbol);
         lv_obj_set_style_text_color(ls, C_TEXT_SEC, 0);
@@ -263,8 +287,8 @@ static void layout_4gas(lv_obj_t *parent)
         int y = CONTENT_Y + PAD + row * (card_h + PAD);
 
         lv_color_t bg = (g_gas[i].status == GAS_ALARM) ? C_BG_CARD_ALT : C_BG_CARD;
-        lv_color_t bd = (g_gas[i].status == GAS_ALARM) ? C_BORDER_ALARM : C_BORDER;
-        lv_obj_t *c = ui_card_create(parent, x, y, card_w, card_h, bg, bd);
+        lv_obj_t *c = ui_card_create(parent, x, y, card_w, card_h, bg, C_BORDER);
+        card_objs[i] = c;
 
         lv_obj_t *ls = lv_label_create(c);
         lv_label_set_text(ls, g_gas[i].symbol);
@@ -277,41 +301,59 @@ static void layout_4gas(lv_obj_t *parent)
 }
 
 /* ═══════════════════════════════════════════════════
- *  LAYOUT 5 – 1 alarm-priority large + 2×2 compact
+ *  LAYOUT 5 – 5-row list layout
  * ═══════════════════════════════════════════════════ */
 static void layout_5gas(lv_obj_t *parent)
 {
-    int top_h  = 80;
-    int sml_h  = (CONTENT_H - top_h - PAD * 3) / 2;
-    int sml_w  = (SCR_W - PAD * 3) / 2;
+    int card_h = 35;
+    int row_spacing = 37;
+    int start_y = CONTENT_Y + 2;
 
-    /* Top big card – always show highest-priority gas (idx 0) */
-    lv_color_t tbg = (g_gas[0].status == GAS_ALARM) ? C_BG_CARD_ALT : C_BG_CARD;
-    lv_color_t tbd = (g_gas[0].status == GAS_ALARM) ? C_BORDER_ALARM : C_BORDER;
-    lv_obj_t *top = ui_card_create(parent, PAD, CONTENT_Y + PAD,
-                                   SCR_W - PAD*2, top_h, tbg, tbd);
-    lv_obj_t *ln = lv_label_create(top);
-    lv_label_set_text(ln, g_gas[0].name);
-    lv_obj_set_style_text_color(ln, ui_status_color(g_gas[0].status), 0);
-    lv_obj_set_style_text_font(ln, UI_FONT_CJK_14, 0);
-    lv_obj_align(ln, LV_ALIGN_TOP_LEFT, 8, 5);
-    card_add_content(top, 0, FN40, 0, 14, 66, 4, 5, false);
+    for (int i = 0; i < 5; i++) {
+        gas_ch_t *g = &g_gas[i];
+        lv_color_t col = (g->status == GAS_ALARM) ? C_ALARM : C_OK;
+        
+        lv_color_t bg = (g->status == GAS_ALARM) ? C_BG_CARD_ALT : C_BG_CARD;
+        
+        lv_obj_t *card = ui_card_create(parent, 4, start_y + i * row_spacing, SCR_W - 8, card_h, bg, C_BORDER);
+        card_objs[i] = card;
+        
+        // Status indicator pill on the left
+        lv_obj_t *indicator = lv_obj_create(card);
+        lv_obj_set_size(indicator, 4, 20);
+        lv_obj_align(indicator, LV_ALIGN_LEFT_MID, 6, 0);
+        lv_obj_set_style_bg_color(indicator, ui_status_color(g->status), 0);
+        lv_obj_set_style_bg_opa(indicator, LV_OPA_COVER, 0);
+        lv_obj_set_style_border_width(indicator, 0, 0);
+        lv_obj_set_style_radius(indicator, 2, 0);
+        lv_obj_clear_flag(indicator, LV_OBJ_FLAG_SCROLLABLE);
 
-    /* 2×2 small cards for channels 1‥4 */
-    for (int i = 1; i <= 4; i++) {
-        int col = (i-1) % 2;
-        int row = (i-1) / 2;
-        int x = PAD + col * (sml_w + PAD);
-        int y = CONTENT_Y + PAD + top_h + PAD + row * (sml_h + PAD);
-        lv_obj_t *c = ui_card_create(parent, x, y, sml_w, sml_h, C_BG_CARD, C_BORDER);
-
-        lv_obj_t *ls = lv_label_create(c);
-        lv_label_set_text(ls, g_gas[i].symbol);
-        lv_obj_set_style_text_color(ls, C_TEXT_SEC, 0);
-        lv_obj_set_style_text_font(ls, FN10, 0);
-        lv_obj_align(ls, LV_ALIGN_TOP_LEFT, 5, 4);
-
-        card_add_content(c, i, FN20, 0, 16, 44, 3, 4, false);
+        // 1. Gas Name (CO 一氧化碳) - Left Aligned
+        lv_obj_t *lbl_name = lv_label_create(card);
+        lv_label_set_text(lbl_name, ui_get_text(g->name));
+        lv_obj_set_style_text_color(lbl_name, C_TEXT_PRI, 0);
+        lv_obj_set_style_text_font(lbl_name, UI_FONT_CJK_24, 0);
+        lv_obj_align(lbl_name, LV_ALIGN_LEFT_MID, 16, 0);
+        
+        // 2. Value - Right-aligned (aligned near the right side, size 24)
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%.1f", g->value);
+        lv_obj_t *lbl_val = lv_label_create(card);
+        lv_label_set_text(lbl_val, buf);
+        lv_obj_set_style_text_color(lbl_val, col, 0);
+        lv_obj_set_style_text_font(lbl_val, FN24, 0);
+        lv_obj_align(lbl_val, LV_ALIGN_RIGHT_MID, -45, 0);
+        h_val[i] = lbl_val;
+        
+        // 3. Unit - Positioned right next to Value
+        lv_obj_t *lbl_unit = lv_label_create(card);
+        lv_label_set_text(lbl_unit, g->unit);
+        lv_obj_set_style_text_color(lbl_unit, C_TEXT_SEC, 0);
+        lv_obj_set_style_text_font(lbl_unit, FN10, 0);
+        lv_obj_align_to(lbl_unit, lbl_val, LV_ALIGN_OUT_RIGHT_BOTTOM, 3, -2);
+        
+        h_badge[i] = NULL;
+        h_bar[i] = NULL;
     }
 }
 
@@ -323,6 +365,8 @@ void ui_page_home_create(lv_obj_t *parent)
     memset(h_val, 0, sizeof(h_val));
     memset(h_bar, 0, sizeof(h_bar));
     memset(h_badge, 0, sizeof(h_badge));
+    memset(card_objs, 0, sizeof(card_objs));
+    g_selected_gas = -1;
 
     /* Top bar */
     ui_topbar_create(parent, "气体检测仪", "运行中",
@@ -356,9 +400,11 @@ void ui_refresh_home(void)
         snprintf(buf, sizeof(buf), "%.1f", g_gas[i].value);
         lv_label_set_text(h_val[i], buf);
 
-        lv_color_t col = ui_status_color(g_gas[i].status);
-        lv_obj_set_style_text_color(h_val[i], col, 0);
+        // Requirement 2: green for normal/warn, red for alarm
+        lv_color_t val_col = (g_gas[i].status == GAS_ALARM) ? C_ALARM : C_OK;
+        lv_obj_set_style_text_color(h_val[i], val_col, 0);
 
+        lv_color_t col = ui_status_color(g_gas[i].status);
         if (h_bar[i]) {
             lv_obj_set_style_bg_color(h_bar[i], col, LV_PART_INDICATOR);
             lv_bar_set_value(h_bar[i],
@@ -369,4 +415,5 @@ void ui_refresh_home(void)
             lv_obj_set_style_text_color(h_badge[i], col, 0);
         }
     }
+    home_update_selection();
 }

@@ -78,6 +78,8 @@ set(UI_SOURCES
     src/ui_menu.c
     src/ui_param.c
     src/ui_password.c
+    src/ui_curve.c
+    src/fonts/ui_font_CJK_24.c
     src/fonts/ui_font_CJK_14.c
 )
 list(APPEND MAIN_SOURCES ${UI_SOURCES})

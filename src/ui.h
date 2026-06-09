@@ -11,7 +11,9 @@ extern "C" {
 #define SCR_W  320
 #define SCR_H  240
 
+LV_FONT_DECLARE(ui_font_CJK_24)
 LV_FONT_DECLARE(ui_font_CJK_14)
+#define UI_FONT_CJK_24 (&ui_font_CJK_24)
 #define UI_FONT_CJK_14 (&ui_font_CJK_14)
 
 /* ── Colour palette (dark theme) ────────────────── */
@@ -73,6 +75,7 @@ void ui_page_home_create(lv_obj_t *parent);
 void ui_page_password_create(lv_obj_t *parent);
 void ui_page_menu_create(lv_obj_t *parent);
 void ui_page_param_create(lv_obj_t *parent);
+void ui_page_curve_create(lv_obj_t *parent);
 
 /* ── Key handler (call from your BSP IRQ/task) ───── */
 typedef enum { KEY_UP, KEY_DOWN, KEY_OK, KEY_ESC } ui_key_t;
@@ -81,12 +84,26 @@ void ui_key_event(ui_key_t key);
 /* ── Periodic refresh (call every ~500 ms) ───────── */
 void ui_refresh_home(void);
 
+/* ── Language translation system ─────────────────── */
+typedef enum {
+    LANG_CHINESE = 0,
+    LANG_ENGLISH = 1
+} ui_lang_t;
+
+extern ui_lang_t g_lang;
+const char *ui_get_text(const char *key);
+
 /* ── Screen manager ──────────────────────────────── */
-typedef enum { PAGE_HOME, PAGE_PASSWORD, PAGE_MENU, PAGE_PARAM } ui_page_t;
+typedef enum { PAGE_HOME, PAGE_PASSWORD, PAGE_MENU, PAGE_PARAM, PAGE_CURVE } ui_page_t;
 extern ui_page_t cur_page;
 void ui_goto(ui_page_t page);
+void ui_refresh_current_page(void);
 void ui_init(void);
 void ui_destroy(void);
+
+extern int g_selected_gas;
+void ui_home_key(ui_key_t key);
+void ui_curve_key(ui_key_t key);
 
 /* Shared helpers used by the page modules. */
 void ui_style_screen(lv_obj_t *scr);
