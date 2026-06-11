@@ -79,6 +79,7 @@ set(UI_SOURCES
     src/ui_param.c
     src/ui_password.c
     src/ui_curve.c
+    src/ui_datalog.c
     src/fonts/ui_font_CJK_24.c
     src/fonts/ui_font_CJK_14.c
 )

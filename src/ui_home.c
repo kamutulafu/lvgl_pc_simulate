@@ -40,6 +40,9 @@ static void home_update_selection(void)
 
 void ui_home_key(ui_key_t key)
 {
+    if (key == KEY_LEFT) key = KEY_ESC;
+    else if (key == KEY_RIGHT) key = KEY_OK;
+
     if (key == KEY_UP) {
         if (g_selected_gas == -1) {
             g_selected_gas = g_gas_count - 1;

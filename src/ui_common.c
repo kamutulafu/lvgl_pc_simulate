@@ -23,6 +23,7 @@ static lv_obj_t *scr_password;
 static lv_obj_t *scr_menu;
 static lv_obj_t *scr_param;
 static lv_obj_t *scr_curve;
+static lv_obj_t *scr_datalog;
 
 ui_page_t cur_page = PAGE_HOME;
 
@@ -80,6 +81,18 @@ const char *ui_get_text(const char *key)
         if (strcmp(key, "传感器校准") == 0) return "Calibration";
         if (strcmp(key, "数据记录") == 0) return "Data Log";
         if (strcmp(key, "系统信息") == 0) return "System Info";
+        if (strcmp(key, "数据查询") == 0) return "Query Data";
+        if (strcmp(key, "数据删除") == 0) return "Delete Data";
+        if (strcmp(key, "数据导出") == 0) return "Export Data";
+        if (strcmp(key, "存储设置") == 0) return "Storage Set";
+        if (strcmp(key, "选择气体") == 0) return "Select Gas";
+        if (strcmp(key, "确认删除吗？") == 0) return "Confirm Delete?";
+        if (strcmp(key, "正在导出...") == 0) return "Exporting...";
+        if (strcmp(key, "导出成功!") == 0) return "Export Success!";
+        if (strcmp(key, "存储间隔") == 0) return "Store Interval";
+        if (strcmp(key, "循环覆盖") == 0) return "Overwrite";
+        if (strcmp(key, "开启") == 0) return "ON";
+        if (strcmp(key, "关闭") == 0) return "OFF";
         
         if (strcmp(key, "▲ 上移") == 0) return "▲ Up";
         if (strcmp(key, "▼ 下移") == 0) return "▼ Down";
@@ -166,6 +179,7 @@ static lv_obj_t *ui_create_page(ui_page_t page)
     else if (page == PAGE_MENU)     { slot = &scr_menu;     create_cb = ui_page_menu_create; }
     else if (page == PAGE_PARAM)    { slot = &scr_param;    create_cb = ui_page_param_create; }
     else if (page == PAGE_CURVE)    { slot = &scr_curve;    create_cb = ui_page_curve_create; }
+    else if (page == PAGE_DATALOG)  { slot = &scr_datalog;  create_cb = ui_page_datalog_create; }
 
     if ((slot == NULL) || (create_cb == NULL)) return NULL;
 
@@ -185,7 +199,7 @@ static lv_obj_t *ui_create_page(ui_page_t page)
 
 static void ui_release_inactive_pages(lv_obj_t *keep)
 {
-    lv_obj_t **screens[] = { &scr_home, &scr_password, &scr_menu, &scr_param, &scr_curve };
+    lv_obj_t **screens[] = { &scr_home, &scr_password, &scr_menu, &scr_param, &scr_curve, &scr_datalog };
 
     for (uint32_t i = 0; i < sizeof(screens) / sizeof(screens[0]); i++) {
         if ((*screens[i] != NULL) && (*screens[i] != keep)) {
@@ -208,10 +222,14 @@ static void ui_key_catcher_event_cb(lv_event_t *e)
         ui_key_event(KEY_DOWN);
         break;
     case LV_KEY_RIGHT:
+        ui_key_event(KEY_RIGHT);
+        break;
     case LV_KEY_ENTER:
         ui_key_event(KEY_OK);
         break;
     case LV_KEY_LEFT:
+        ui_key_event(KEY_LEFT);
+        break;
     case LV_KEY_ESC:
         ui_key_event(KEY_ESC);
         break;
@@ -408,6 +426,7 @@ void ui_refresh_current_page(void)
     else if (page == PAGE_MENU)     { old_scr = scr_menu;     scr_menu     = NULL; }
     else if (page == PAGE_PARAM)    { old_scr = scr_param;    scr_param    = NULL; }
     else if (page == PAGE_CURVE)    { old_scr = scr_curve;    scr_curve    = NULL; }
+    else if (page == PAGE_DATALOG)  { old_scr = scr_datalog;  scr_datalog  = NULL; }
 
     ui_goto(page);
     if (old_scr) lv_obj_delete_async(old_scr);
@@ -424,6 +443,7 @@ void ui_init(void)
     scr_menu     = NULL;
     scr_param    = NULL;
     scr_curve    = NULL;
+    scr_datalog  = NULL;
     ui_goto(PAGE_HOME);
 }
 
@@ -448,5 +468,9 @@ void ui_destroy(void)
     if (scr_curve) {
         lv_obj_delete(scr_curve);
         scr_curve = NULL;
+    }
+    if (scr_datalog) {
+        lv_obj_delete(scr_datalog);
+        scr_datalog = NULL;
     }
 }

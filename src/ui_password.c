@@ -140,6 +140,7 @@ static void pw_success_timer_cb(lv_timer_t *t)
 {
     lv_timer_del(t);
     success_timer_obj = NULL;
+    ui_menu_reset_selection();
     ui_goto(PAGE_MENU);
 }
 
@@ -231,6 +232,9 @@ static void pw_validate(void)
  * ───────────────────────────────────────────────── */
 void ui_pw_key(ui_key_t key)
 {
+    if (key == KEY_LEFT) key = KEY_ESC;
+    else if (key == KEY_RIGHT) key = KEY_OK;
+
     if (pw_locked) return;  /* ignore input during lockout */
 
     switch (key) {

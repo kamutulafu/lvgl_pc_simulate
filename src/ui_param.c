@@ -185,20 +185,47 @@ static void set_topbadge(const char *txt, lv_color_t bg, lv_color_t col)
  * ══════════════════════════════════════════════════ */
 static void update_hints(void)
 {
+    param_t *p = &g_params[g_cursor];
+    bool is_lang = (strcmp(p->name, "语言选择") == 0 || strcmp(p->name, "Language") == 0);
+
     static const char *tbl[6][4] = {
-        { "▲ 上移", "▼ 下移",  "OK 编辑",    "ESC 返回"  },  /* BROWSE       */
+        { "▲▼ 选择", "",        "OK 编辑",    "ESC 返回"  },  /* BROWSE       */
         { "▲ +",    "▼ -",     "OK 确认",    "ESC 放弃"  },  /* NUM_EDIT     */
         { "",        "",        "OK 保存",    "ESC 继续改"},  /* NUM_CONFIRM  */
         { "▲▼ 换位", "",        "OK 锁定位",  "ESC 退出"  },  /* DIG_SELECT   */
         { "▲ +1",   "▼ -1",    "OK 下一位",  "ESC 返回"  },  /* DIG_EDIT     */
         { "",        "",        "OK 保存",    "ESC 继续改"},  /* DIG_CONFIRM  */
     };
-    for (int i = 0; i < 4; i++)
-        if (hint_slots[i]) lv_label_set_text(hint_slots[i], ui_get_text(tbl[g_state][i]));
-    bool has_up = tbl[g_state][0][0] != '\0';
-    bool has_dn = tbl[g_state][1][0] != '\0';
-    for (int i = 0; i < 4; i++)
-        if (hint_slots[i]) align_hint_slot(i, ui_get_text(tbl[g_state][i]), has_up, has_dn);
+
+    const char *h0 = tbl[g_state][0];
+    const char *h1 = tbl[g_state][1];
+    const char *h2 = tbl[g_state][2];
+    const char *h3 = tbl[g_state][3];
+
+    if (is_lang) {
+        if (g_state == PS_NUM_EDIT) {
+            h0 = "▲▼ 更改";
+            h1 = "";
+            h2 = "OK 确认";
+            h3 = "ESC 放弃";
+        } else if (g_state == PS_NUM_CONFIRM) {
+            h0 = "";
+            h1 = "";
+            h2 = "OK 保存";
+            h3 = "ESC 返回";
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        const char *txt = (i == 0) ? h0 : (i == 1) ? h1 : (i == 2) ? h2 : h3;
+        if (hint_slots[i]) lv_label_set_text(hint_slots[i], ui_get_text(txt));
+    }
+    bool has_up = h0[0] != '\0';
+    bool has_dn = h1[0] != '\0';
+    for (int i = 0; i < 4; i++) {
+        const char *txt = (i == 0) ? h0 : (i == 1) ? h1 : (i == 2) ? h2 : h3;
+        if (hint_slots[i]) align_hint_slot(i, ui_get_text(txt), has_up, has_dn);
+    }
 
     static const struct { const char *txt; uint32_t bg; uint32_t col; } badge_tbl[] = {
         { "浏览",   0x1E4A2A, 0x4ECB71 },
@@ -230,17 +257,40 @@ static void render_list(void)
         }
 
         bool sel = (i == g_cursor);
-        lv_obj_set_style_bg_color(list_rows[i],
-            sel ? lv_color_hex(0x162840) : lv_color_hex(0x0E1620), 0);
-        lv_obj_set_style_border_color(list_rows[i],
-            sel ? C_PW_BORDER : C_BORDER, LV_PART_MAIN);
-        lv_obj_set_style_border_side(list_rows[i],
-            sel ? LV_BORDER_SIDE_LEFT : LV_BORDER_SIDE_BOTTOM, 0);
-        lv_obj_set_style_border_width(list_rows[i], sel ? 3 : 1, 0);
-        lv_obj_set_style_text_color(list_name[i],
-            sel ? lv_color_hex(0xFFFFFF) : lv_color_hex(0x88AACC), 0);
+        
+        lv_color_t bg_col = C_BG_CARD;
+        lv_color_t border_col = C_BORDER;
+        lv_color_t name_col = C_TEXT_SEC;
+        lv_color_t val_col = lv_color_hex(0x7ECFFF);
+        
+        if (sel) {
+            if (g_state == PS_BROWSE) {
+                bg_col = C_PW_ACTIVE;
+                border_col = C_PW_BORDER;
+                name_col = C_TEXT_PRI;
+                val_col = C_TEXT_PRI;
+            } else if (g_state == PS_NUM_EDIT) {
+                bg_col = lv_color_hex(0x2A1F0F);
+                border_col = C_WARN;
+                name_col = C_TEXT_PRI;
+                val_col = C_WARN;
+            } else if (g_state == PS_NUM_CONFIRM) {
+                bg_col = lv_color_hex(0x2F1313);
+                border_col = C_ALARM;
+                name_col = C_TEXT_PRI;
+                val_col = C_ALARM;
+            }
+        }
+
+        lv_obj_set_style_bg_color(list_rows[i], bg_col, 0);
+        lv_obj_set_style_border_color(list_rows[i], border_col, LV_PART_MAIN);
+        lv_obj_set_style_border_side(list_rows[i], LV_BORDER_SIDE_BOTTOM, 0);
+        lv_obj_set_style_border_width(list_rows[i], 1, 0);
+        
+        lv_obj_set_style_text_color(list_name[i], name_col, 0);
         lv_label_set_text(list_name[i], ui_get_text(g_params[i].name));
-        lv_label_set_text(list_mark[i], sel ? LV_SYMBOL_RIGHT : " ");
+        
+        lv_label_set_text(list_mark[i], (sel && g_state == PS_BROWSE) ? LV_SYMBOL_RIGHT : " ");
 
         /* 值字符串 */
         param_t *p = &g_params[i];
@@ -250,9 +300,24 @@ static void render_list(void)
             for (int d = 0; d < p->digit_count; d++)
                 off += snprintf(buf+off, sizeof(buf)-off, d ? "-%d":"%d", p->digits[d]);
         } else {
-            fmt_val(buf, sizeof(buf), p, p->val);
+            bool is_lang = (strcmp(p->name, "语言选择") == 0 || strcmp(p->name, "Language") == 0);
+            float val_to_show = (sel && (g_state == PS_NUM_EDIT || g_state == PS_NUM_CONFIRM)) ? g_edit_val : p->val;
+            
+            char vb[24];
+            fmt_val(vb, sizeof(vb), p, val_to_show);
+            
+            if (sel && is_lang && g_state == PS_NUM_EDIT) {
+                snprintf(buf, sizeof(buf), "< %s >", vb);
+            } else if (sel && is_lang && g_state == PS_NUM_CONFIRM) {
+                snprintf(buf, sizeof(buf), "[ %s ] (%s)", vb, ui_get_text("确认?"));
+            } else if (sel && g_state == PS_NUM_CONFIRM) {
+                snprintf(buf, sizeof(buf), "%s (%s)", vb, ui_get_text("确认?"));
+            } else {
+                snprintf(buf, sizeof(buf), "%s", vb);
+            }
         }
         lv_label_set_text(list_val[i], buf);
+        lv_obj_set_style_text_color(list_val[i], val_col, 0);
     }
 }
 
@@ -422,14 +487,19 @@ static void render_dig(void)
 /* ── Master render ── */
 static void param_render(void)
 {
-    switch (g_state) {
-    case PS_BROWSE:
-        render_list(); break;
-    case PS_NUM_EDIT:
-    case PS_NUM_CONFIRM:
-        render_num(); break;
-    default:
-        render_dig(); break;
+    param_t *p = &g_params[g_cursor];
+    bool is_lang = (strcmp(p->name, "语言选择") == 0 || strcmp(p->name, "Language") == 0);
+
+    if (g_state == PS_BROWSE || (is_lang && (g_state == PS_NUM_EDIT || g_state == PS_NUM_CONFIRM))) {
+        render_list();
+    } else {
+        switch (g_state) {
+        case PS_NUM_EDIT:
+        case PS_NUM_CONFIRM:
+            render_num(); break;
+        default:
+            render_dig(); break;
+        }
     }
     update_hints();
 }
@@ -439,6 +509,9 @@ static void param_render(void)
  * ══════════════════════════════════════════════════ */
 void ui_param_key(ui_key_t key)
 {
+    if (key == KEY_LEFT) key = KEY_ESC;
+    else if (key == KEY_RIGHT) key = KEY_OK;
+
     param_t *p = &g_params[g_cursor];
 
     switch (g_state) {
@@ -550,7 +623,7 @@ static void build_chrome(lv_obj_t *parent)
     lv_obj_t *tb = lv_obj_create(parent);
     lv_obj_set_size(tb, SCR_W, TOPBAR_H);
     lv_obj_align(tb, LV_ALIGN_TOP_MID, 0, 0);
-    lv_obj_set_style_bg_color(tb, lv_color_hex(0x131F2E), 0);
+    lv_obj_set_style_bg_color(tb, lv_color_hex(0x0A1118), 0);
     lv_obj_set_style_bg_opa(tb, LV_OPA_COVER, 0);
     lv_obj_set_style_border_width(tb, 1, 0);
     lv_obj_set_style_border_side(tb, LV_BORDER_SIDE_BOTTOM, 0);
@@ -600,7 +673,7 @@ static void build_chrome(lv_obj_t *parent)
     for (int i = 0; i < 4; i++) {
         hint_slots[i] = lv_label_create(hb);
         lv_label_set_text(hint_slots[i], "");
-        lv_obj_set_style_text_color(hint_slots[i], lv_color_hex(0x88AACC), 0);
+        lv_obj_set_style_text_color(hint_slots[i], lv_color_hex(0xDFE9F0), 0);
         lv_obj_set_style_text_font(hint_slots[i], UI_FONT_CJK_14, 0);
         lv_label_set_long_mode(hint_slots[i], LV_LABEL_LONG_CLIP);
         align_hint_slot(i, "", false, false);
@@ -613,7 +686,7 @@ static void build_list(lv_obj_t *parent)
         lv_obj_t *row = lv_obj_create(parent);
         lv_obj_set_size(row, SCR_W, ROW_H);
         lv_obj_set_pos(row, 0, CONTENT_Y + i * ROW_H);
-        lv_obj_set_style_bg_color(row, lv_color_hex(0x0E1620), 0);
+        lv_obj_set_style_bg_color(row, C_BG_CARD, 0);
         lv_obj_set_style_bg_opa(row, LV_OPA_COVER, 0);
         lv_obj_set_style_border_width(row, 1, 0);
         lv_obj_set_style_border_side(row, LV_BORDER_SIDE_BOTTOM, 0);
@@ -627,36 +700,15 @@ static void build_list(lv_obj_t *parent)
         list_mark[i] = lv_label_create(row);
         lv_label_set_text(list_mark[i], " ");
         lv_obj_set_style_text_color(list_mark[i], C_ACCENT, 0);
-        lv_obj_set_style_text_font(list_mark[i], FN10, 0);
-        lv_obj_align(list_mark[i], LV_ALIGN_LEFT_MID, 2, 0);
+        lv_obj_set_style_text_font(list_mark[i], &lv_font_montserrat_14, 0);
+        lv_obj_align(list_mark[i], LV_ALIGN_LEFT_MID, 10, 0);
 
         /* 参数名 */
         list_name[i] = lv_label_create(row);
         lv_label_set_text(list_name[i], g_params[i].name);
-        lv_obj_set_style_text_color(list_name[i], lv_color_hex(0x88AACC), 0);
+        lv_obj_set_style_text_color(list_name[i], C_TEXT_SEC, 0);
         lv_obj_set_style_text_font(list_name[i], UI_FONT_CJK_24, 0);
-        lv_obj_align(list_name[i], LV_ALIGN_LEFT_MID, 14, 0);
-
-        /* 类型胶囊 */
-        lv_obj_t *tb = lv_obj_create(row);
-        lv_obj_set_size(tb, LV_SIZE_CONTENT, 13);
-        lv_obj_align(tb, LV_ALIGN_RIGHT_MID, -82, 0);
-        lv_obj_set_style_bg_color(tb,
-            g_params[i].type == PARAM_NUM
-            ? lv_color_hex(0x1A2A3A) : lv_color_hex(0x201040), 0);
-        lv_obj_set_style_bg_opa(tb, LV_OPA_COVER, 0);
-        lv_obj_set_style_border_width(tb, 0, 0);
-        lv_obj_set_style_radius(tb, 6, 0);
-        lv_obj_set_style_pad_hor(tb, 4, 0);
-        lv_obj_set_style_pad_ver(tb, 0, 0);
-        lv_obj_clear_flag(tb, LV_OBJ_FLAG_SCROLLABLE);
-        lv_obj_t *tl = lv_label_create(tb);
-        lv_label_set_text(tl, g_params[i].type == PARAM_NUM ? ui_get_text("数值") : ui_get_text("位码"));
-        lv_obj_set_style_text_color(tl,
-            g_params[i].type == PARAM_NUM
-            ? lv_color_hex(0x5588AA) : lv_color_hex(0x8866CC), 0);
-        lv_obj_set_style_text_font(tl, UI_FONT_CJK_24, 0);
-        lv_obj_center(tl);
+        lv_obj_align(list_name[i], LV_ALIGN_LEFT_MID, 30, 0);
 
         /* 当前值 */
         list_val[i] = lv_label_create(row);

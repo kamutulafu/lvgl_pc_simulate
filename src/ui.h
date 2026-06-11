@@ -76,10 +76,13 @@ void ui_page_password_create(lv_obj_t *parent);
 void ui_page_menu_create(lv_obj_t *parent);
 void ui_page_param_create(lv_obj_t *parent);
 void ui_page_curve_create(lv_obj_t *parent);
+void ui_page_datalog_create(lv_obj_t *parent);
 
 /* ── Key handler (call from your BSP IRQ/task) ───── */
-typedef enum { KEY_UP, KEY_DOWN, KEY_OK, KEY_ESC } ui_key_t;
+typedef enum { KEY_UP, KEY_DOWN, KEY_OK, KEY_ESC, KEY_LEFT, KEY_RIGHT } ui_key_t;
 void ui_key_event(ui_key_t key);
+void ui_datalog_key(ui_key_t key);
+void ui_menu_reset_selection(void);
 
 /* ── Periodic refresh (call every ~500 ms) ───────── */
 void ui_refresh_home(void);
@@ -94,7 +97,7 @@ extern ui_lang_t g_lang;
 const char *ui_get_text(const char *key);
 
 /* ── Screen manager ──────────────────────────────── */
-typedef enum { PAGE_HOME, PAGE_PASSWORD, PAGE_MENU, PAGE_PARAM, PAGE_CURVE } ui_page_t;
+typedef enum { PAGE_HOME, PAGE_PASSWORD, PAGE_MENU, PAGE_PARAM, PAGE_CURVE, PAGE_DATALOG } ui_page_t;
 extern ui_page_t cur_page;
 void ui_goto(ui_page_t page);
 void ui_refresh_current_page(void);

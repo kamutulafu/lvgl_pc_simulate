@@ -34,7 +34,7 @@ static int menu_sel = 0;
 static int menu_top = 0;
 
 /* ── Widget handles ──────────────────────────────── */
-#define VISIBLE_ROWS 4
+#define VISIBLE_ROWS 5
 static lv_obj_t *menu_rows[VISIBLE_ROWS];
 static lv_obj_t *menu_lbls[VISIBLE_ROWS];
 static lv_obj_t *menu_icons[VISIBLE_ROWS];
@@ -69,6 +69,9 @@ static void menu_redraw(void)
  * ───────────────────────────────────────────────── */
 void ui_menu_key(ui_key_t key)
 {
+    if (key == KEY_LEFT) key = KEY_ESC;
+    else if (key == KEY_RIGHT) key = KEY_OK;
+
     switch (key) {
     case KEY_UP:
         if (menu_sel > 0) {
@@ -86,6 +89,7 @@ void ui_menu_key(ui_key_t key)
         break;
     case KEY_OK:
         if (menu_sel == 0) ui_goto(PAGE_PARAM);
+        else if (menu_sel == 3) ui_goto(PAGE_DATALOG);
         break;
     case KEY_ESC:
         menu_sel = 0;
@@ -97,13 +101,17 @@ void ui_menu_key(ui_key_t key)
 }
 
 /* ─────────────────────────────────────────────────
- *  PUBLIC: create menu screen
+ *  Reset menu selection
  * ───────────────────────────────────────────────── */
-void ui_page_menu_create(lv_obj_t *parent)
+void ui_menu_reset_selection(void)
 {
     menu_sel = 0;
     menu_top = 0;
+}
 
+/* ── Create menu screen ─────────────────────────── */
+void ui_page_menu_create(lv_obj_t *parent)
+{
     ui_topbar_create(parent, ui_get_text("系统菜单"), ui_get_text("已验证"),
                      C_BADGE_OK_BG, C_OK);
 
@@ -188,6 +196,9 @@ void ui_key_event(ui_key_t key)
         break;
     case PAGE_CURVE:
         ui_curve_key(key);
+        break;
+    case PAGE_DATALOG:
+        ui_datalog_key(key);
         break;
     }
 }

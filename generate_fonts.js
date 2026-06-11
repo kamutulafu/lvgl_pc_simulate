@@ -2,7 +2,12 @@ const path = require('path');
 const fs = require('fs');
 const cli = require('f:/my_project_2026/LVGL/lv_font_conv_cli/lib/cli');
 
-const symbols = "°·–—₂₄℃−▲▼●一上下与两个中串二亮仪传位低体作保信修值光入写准减出创到前剩功势化单原参取右号名周器囊回围型增备大头子字存定实密射局层左已布常序度延建弃式当录待徽态息意感成报择持按换据描提操支改放数整文明映最期机条标栏校样格检模次正步气氢氧氮注测浏消点烷状甲界码硫确碳示种移符等签箭类系统继续编置背胶范菜行表装览言警认记设访证该语误说请调趋辑输运返还进连迟述退选逐递通道采量锁错键问阈限面页顶饰验高（），：";
+let symbols = "°·–—₂₄℃−▲▼●（），：？◀▶";
+try {
+    symbols += fs.readFileSync(path.join(__dirname, "unique_chars.txt"), "utf8");
+} catch (e) {
+    console.error("Failed to read unique_chars.txt:", e);
+}
 
 const cjk_14_args = [
     "--font",

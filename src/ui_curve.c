@@ -133,11 +133,14 @@ void ui_page_curve_create(lv_obj_t *parent)
     lv_obj_align(lbl_chan, LV_ALIGN_BOTTOM_RIGHT, -10, -8);
     
     // Bottom hint bar
-    ui_hintbar_create(parent, "", "", "", "ESC Back");
+    ui_hintbar_create(parent, "", "", "", "ESC 返回");
 }
 
 void ui_curve_key(ui_key_t key)
 {
+    if (key == KEY_LEFT) key = KEY_ESC;
+    else if (key == KEY_RIGHT) key = KEY_OK;
+
     if (key == KEY_ESC) {
         ui_goto(PAGE_HOME);
     }
