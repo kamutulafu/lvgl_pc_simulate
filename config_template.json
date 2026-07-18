@@ -1,0 +1,96 @@
+{
+  "fileVersion": 1,
+  "deviceModel": "CD4-AK400",
+  "generatedAt": "2026-07-10T15:00:00+08:00",
+  "note": "厂内示例配置，实际参数以标定记录为准",
+
+  "device": {
+    "deviceName": "CD4-AK400",
+    "deviceVersion": "V1.0.0",
+    "commAddress": 1,
+    "baudRate": 9600,
+    "openTimeSec": 3,
+    "saveType": "cycle",
+    "saveIntervalSec": 60,
+    "saveCount": 1000,
+    "sleepTimeSec": 300
+  },
+
+  "channels": [
+    {
+      "index": 0,
+      "enabled": true,
+      "name": "硫化氢",
+      "unit": "ppm",
+      "adChannel": 4,
+      "range": 100,
+      "decimalDigits": 1,
+      "alarmType": "highLow",
+      "lowAlarmVal": 10,
+      "highAlarmVal": 20,
+      "zeroConcentration": 0,
+      "calibrationConcentration": 50,
+      "displayClamp": { "min": -1, "max": 1, "fixedValue": 0 }
+    },
+    {
+      "index": 1,
+      "enabled": true,
+      "name": "氧气",
+      "unit": "%vol",
+      "adChannel": 3,
+      "range": 30,
+      "decimalDigits": 1,
+      "alarmType": "highLow",
+      "lowAlarmVal": 19.5,
+      "highAlarmVal": 23.5,
+      "zeroConcentration": 0,
+      "calibrationConcentration": 20.9,
+      "displayClamp": { "min": 0, "max": 0, "fixedValue": 0 }
+    },
+    {
+      "index": 2,
+      "enabled": true,
+      "name": "一氧化碳",
+      "unit": "ppm",
+      "adChannel": 2,
+      "range": 1000,
+      "decimalDigits": 0,
+      "alarmType": "highLow",
+      "lowAlarmVal": 35,
+      "highAlarmVal": 100,
+      "zeroConcentration": 0,
+      "calibrationConcentration": 100,
+      "displayClamp": { "min": -5, "max": 5, "fixedValue": 0 }
+    },
+    {
+      "index": 3,
+      "enabled": true,
+      "name": "甲烷",
+      "unit": "%vol",
+      "adChannel": 0,
+      "range": 5,
+      "decimalDigits": 2,
+      "alarmType": "highLow",
+      "lowAlarmVal": 1,
+      "highAlarmVal": 2.5,
+      "zeroConcentration": 0,
+      "calibrationConcentration": 2.5,
+      "displayClamp": { "min": 0, "max": 0, "fixedValue": 0 }
+    },
+    {
+      "index": 4,
+      "enabled": false,
+      "name": "二氧化碳",
+      "unit": "ppm",
+      "adChannel": 255,
+      "range": 1000,
+      "decimalDigits": 0,
+      "alarmType": "none",
+      "lowAlarmVal": 0,
+      "highAlarmVal": 1000,
+      "zeroConcentration": 0,
+      "calibrationConcentration": 500,
+      "displayClamp": { "min": 0, "max": 0, "fixedValue": 0 }
+    }
+  ]
+}

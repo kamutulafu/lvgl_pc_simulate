@@ -18,8 +18,8 @@ typedef struct {
 
 static const menu_item_t MENU_ITEMS[] = {
     { LV_SYMBOL_SETTINGS,  "参数设置"   },
-    { LV_SYMBOL_WARNING,   "报警阈值"   },
-    { LV_SYMBOL_REFRESH,   "传感器校准" },
+    { LV_SYMBOL_WARNING,   "报警设置"   },
+    { LV_SYMBOL_REFRESH,   "浓度校准"   },
     { LV_SYMBOL_SAVE,      "数据记录"   },
     { LV_SYMBOL_LIST,      "系统信息"   },
 };
@@ -89,13 +89,18 @@ void ui_menu_key(ui_key_t key)
         break;
     case KEY_OK:
         if (menu_sel == 0) ui_goto(PAGE_PARAM);
+        else if (menu_sel == 1) ui_goto(PAGE_ALARM_SET);
+        else if (menu_sel == 2) ui_goto(PAGE_CALIB);
         else if (menu_sel == 3) ui_goto(PAGE_DATALOG);
+        else if (menu_sel == 4) ui_goto(PAGE_SYS_INFO);
         break;
     case KEY_ESC:
         menu_sel = 0;
         menu_top = 0;
         menu_redraw();
         ui_goto(PAGE_HOME);
+        break;
+    default:
         break;
     }
 }
@@ -199,6 +204,15 @@ void ui_key_event(ui_key_t key)
         break;
     case PAGE_DATALOG:
         ui_datalog_key(key);
+        break;
+    case PAGE_CALIB:
+        ui_calib_key(key);
+        break;
+    case PAGE_ALARM_SET:
+        ui_alarm_set_key(key);
+        break;
+    case PAGE_SYS_INFO:
+        ui_sys_info_key(key);
         break;
     }
 }

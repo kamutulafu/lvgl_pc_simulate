@@ -6,6 +6,121 @@
 #include "ui.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
+static char* get_json_string(const char* json, const char* key, char* out, int max_len) {
+    char search[64];
+    snprintf(search, sizeof(search), "\"%s\"", key);
+    char* p = (char*)strstr(json, search);
+    if (!p) return NULL;
+    p = strchr(p + strlen(search), ':');
+    if (!p) return NULL;
+    p = strchr(p, '"');
+    if (!p) return NULL;
+    p++;
+    char* end = strchr(p, '"');
+    if (!end) return NULL;
+    int len = end - p;
+    if (len >= max_len) len = max_len - 1;
+    strncpy(out, p, len);
+    out[len] = '\0';
+    return out;
+}
+
+static float get_json_float(const char* json, const char* key) {
+    char search[64];
+    snprintf(search, sizeof(search), "\"%s\"", key);
+    char* p = (char*)strstr(json, search);
+    if (!p) return 0;
+    p = strchr(p + strlen(search), ':');
+    if (!p) return 0;
+    p++;
+    return (float)atof(p);
+}
+
+static void ui_load_gas_config(void) {
+    FILE *f = fopen("config_template.json", "rb");
+    if (!f) return;
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *json = (char*)malloc(fsize + 1);
+    if (!json) {
+        fclose(f);
+        return;
+    }
+    fread(json, 1, fsize, f);
+    json[fsize] = 0;
+    fclose(f);
+
+    char *channels_start = strstr(json, "\"channels\"");
+    if (channels_start) {
+        char *p = strchr(channels_start, '[');
+        if (p) {
+            g_gas_count = 0;
+            char *obj_start = strchr(p, '{');
+            while (obj_start && g_gas_count < 5) {
+                char *obj_end = strstr(obj_start, "}");
+                if (!obj_end) break;
+                int obj_len = obj_end - obj_start + 1;
+                char *obj_str = (char*)malloc(obj_len + 1);
+                strncpy(obj_str, obj_start, obj_len);
+                obj_str[obj_len] = 0;
+
+                int enabled = 0;
+                char enabled_key[] = "\"enabled\"";
+                char *ep = strstr(obj_str, enabled_key);
+                if (ep) {
+                    ep = strchr(ep, ':');
+                    if (ep && strstr(ep, "true")) {
+                        enabled = 1;
+                    }
+                }
+
+                if (enabled) {
+                    gas_ch_t *g = &g_gas[g_gas_count];
+                    memset(g, 0, sizeof(gas_ch_t));
+                    char name_buf[64] = {0};
+                    if (get_json_string(obj_str, "name", name_buf, sizeof(name_buf))) {
+                        if (strcmp(name_buf, "硫化氢") == 0) {
+                            strcpy(g->name, "H2S 硫化氢");
+                            strcpy(g->symbol, "H2S");
+                        } else if (strcmp(name_buf, "氧气") == 0) {
+                            strcpy(g->name, "O2  氧气");
+                            strcpy(g->symbol, "O2");
+                        } else if (strcmp(name_buf, "一氧化碳") == 0) {
+                            strcpy(g->name, "CO  一氧化碳");
+                            strcpy(g->symbol, "CO");
+                        } else if (strcmp(name_buf, "甲烷") == 0) {
+                            strcpy(g->name, "CH4 甲烷");
+                            strcpy(g->symbol, "CH4");
+                        } else if (strcmp(name_buf, "二氧化碳") == 0) {
+                            strcpy(g->name, "CO2 二氧化碳");
+                            strcpy(g->symbol, "CO2");
+                        } else {
+                            strncpy(g->name, name_buf, sizeof(g->name)-1);
+                            strncpy(g->symbol, name_buf, sizeof(g->symbol)-1);
+                        }
+                    }
+
+                    get_json_string(obj_str, "unit", g->unit, sizeof(g->unit));
+                    
+                    g->alarm_lo = get_json_float(obj_str, "lowAlarmVal");
+                    g->alarm_hi = get_json_float(obj_str, "highAlarmVal");
+                    g->range_max = get_json_float(obj_str, "range");
+                    
+                    g->value = 0.0f; 
+                    g->status = GAS_NORMAL;
+                    
+                    g_gas_count++;
+                }
+                free(obj_str);
+                obj_start = strchr(obj_end, '{');
+            }
+        }
+    }
+    free(json);
+}
 
 /* ── Demo gas data ───────────────────────────────── */
 gas_ch_t g_gas[5] = {
@@ -24,6 +139,9 @@ static lv_obj_t *scr_menu;
 static lv_obj_t *scr_param;
 static lv_obj_t *scr_curve;
 static lv_obj_t *scr_datalog;
+static lv_obj_t *scr_calib;
+static lv_obj_t *scr_alarm_set;
+static lv_obj_t *scr_sys_info;
 
 ui_page_t cur_page = PAGE_HOME;
 
@@ -137,6 +255,18 @@ const char *ui_get_text(const char *key)
         if (strcmp(key, "确认保存?") == 0) return "Confirm Save?";
         if (strcmp(key, "编辑: %s") == 0) return "Edit: %s";
         
+        if (strcmp(key, "浓度校准") == 0) return "Calibration";
+        if (strcmp(key, "报警设置") == 0) return "Alarm Setting";
+        if (strcmp(key, "调零") == 0) return "Zeroing";
+        if (strcmp(key, "一级校准") == 0) return "Level 1 Cal";
+        if (strcmp(key, "二级校准") == 0) return "Level 2 Cal";
+        if (strcmp(key, "报警模式") == 0) return "Alarm Mode";
+        if (strcmp(key, "报警方式") == 0) return "Alarm Type";
+        if (strcmp(key, "低报") == 0) return "Low Alarm";
+        if (strcmp(key, "高报") == 0) return "High Alarm";
+        if (strcmp(key, "软件信息") == 0) return "SW Info";
+        if (strcmp(key, "硬件信息") == 0) return "HW Info";
+        
         return key;
     }
 }
@@ -180,6 +310,9 @@ static lv_obj_t *ui_create_page(ui_page_t page)
     else if (page == PAGE_PARAM)    { slot = &scr_param;    create_cb = ui_page_param_create; }
     else if (page == PAGE_CURVE)    { slot = &scr_curve;    create_cb = ui_page_curve_create; }
     else if (page == PAGE_DATALOG)  { slot = &scr_datalog;  create_cb = ui_page_datalog_create; }
+    else if (page == PAGE_CALIB)    { slot = &scr_calib;    create_cb = ui_page_calib_create; }
+    else if (page == PAGE_ALARM_SET){ slot = &scr_alarm_set;create_cb = ui_page_alarm_set_create; }
+    else if (page == PAGE_SYS_INFO) { slot = &scr_sys_info; create_cb = ui_page_sys_info_create; }
 
     if ((slot == NULL) || (create_cb == NULL)) return NULL;
 
@@ -199,7 +332,7 @@ static lv_obj_t *ui_create_page(ui_page_t page)
 
 static void ui_release_inactive_pages(lv_obj_t *keep)
 {
-    lv_obj_t **screens[] = { &scr_home, &scr_password, &scr_menu, &scr_param, &scr_curve, &scr_datalog };
+    lv_obj_t **screens[] = { &scr_home, &scr_password, &scr_menu, &scr_param, &scr_curve, &scr_datalog, &scr_calib, &scr_alarm_set, &scr_sys_info };
 
     for (uint32_t i = 0; i < sizeof(screens) / sizeof(screens[0]); i++) {
         if ((*screens[i] != NULL) && (*screens[i] != keep)) {
@@ -427,6 +560,9 @@ void ui_refresh_current_page(void)
     else if (page == PAGE_PARAM)    { old_scr = scr_param;    scr_param    = NULL; }
     else if (page == PAGE_CURVE)    { old_scr = scr_curve;    scr_curve    = NULL; }
     else if (page == PAGE_DATALOG)  { old_scr = scr_datalog;  scr_datalog  = NULL; }
+    else if (page == PAGE_CALIB)    { old_scr = scr_calib;    scr_calib    = NULL; }
+    else if (page == PAGE_ALARM_SET){ old_scr = scr_alarm_set;scr_alarm_set = NULL; }
+    else if (page == PAGE_SYS_INFO) { old_scr = scr_sys_info; scr_sys_info = NULL; }
 
     ui_goto(page);
     if (old_scr) lv_obj_delete_async(old_scr);
@@ -438,12 +574,16 @@ void ui_refresh_current_page(void)
 
 void ui_init(void)
 {
+    ui_load_gas_config();
     scr_home     = NULL;
     scr_password = NULL;
     scr_menu     = NULL;
     scr_param    = NULL;
     scr_curve    = NULL;
     scr_datalog  = NULL;
+    scr_calib    = NULL;
+    scr_alarm_set= NULL;
+    scr_sys_info = NULL;
     ui_goto(PAGE_HOME);
 }
 
@@ -472,5 +612,17 @@ void ui_destroy(void)
     if (scr_datalog) {
         lv_obj_delete(scr_datalog);
         scr_datalog = NULL;
+    }
+    if (scr_calib) {
+        lv_obj_delete(scr_calib);
+        scr_calib = NULL;
+    }
+    if (scr_alarm_set) {
+        lv_obj_delete(scr_alarm_set);
+        scr_alarm_set = NULL;
+    }
+    if (scr_sys_info) {
+        lv_obj_delete(scr_sys_info);
+        scr_sys_info = NULL;
     }
 }

@@ -266,6 +266,8 @@ void ui_pw_key(ui_key_t key)
         pw_set_status(ui_get_text("请输入密码"), C_TEXT_HINT);
         ui_goto(PAGE_HOME);
         break;
+    default:
+        break;
     }
 }
 

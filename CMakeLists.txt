@@ -80,6 +80,9 @@ set(UI_SOURCES
     src/ui_password.c
     src/ui_curve.c
     src/ui_datalog.c
+    src/ui_calib.c
+    src/ui_alarm_set.c
+    src/ui_sys_info.c
     src/fonts/ui_font_CJK_24.c
     src/fonts/ui_font_CJK_14.c
 )

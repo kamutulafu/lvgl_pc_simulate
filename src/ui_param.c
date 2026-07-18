@@ -39,8 +39,6 @@ typedef struct {
 } param_t;
 
 static param_t g_params[] = {
-    { "CO  报警阈值",  "ppm", PARAM_NUM,    50.0f,   0, 150,  1.0f, {0}, 0 },
-    { "H2S 报警阈值", "ppm", PARAM_NUM,    10.0f,   0,  50,  0.5f, {0}, 0 },
     { "采样周期",      "ms",  PARAM_NUM,   500.0f, 100,5000,100.0f, {0}, 0 },
     { "报警延迟",      "s",   PARAM_NUM,     3.0f,   0,  30,  1.0f, {0}, 0 },
     { "背光亮度",      "%",   PARAM_NUM,    80.0f,  10, 100, 10.0f, {0}, 0 },
