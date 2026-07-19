@@ -39,7 +39,10 @@ static float get_json_float(const char* json, const char* key) {
 }
 
 static void ui_load_gas_config(void) {
-    FILE *f = fopen("config_template.json", "rb");
+    FILE *f = fopen("config.json", "rb");
+    if (!f) {
+        f = fopen("config_default.json", "rb");
+    }
     if (!f) return;
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
@@ -130,7 +133,7 @@ gas_ch_t g_gas[5] = {
     { "CH4 甲烷",    "CH4", "%LEL",   1.2f,  10.0f,  20.0f, 100.0f, GAS_NORMAL },
     { "NO2 二氧化氮","NO2", "ppm",    0.3f,   1.0f,   3.0f,   5.0f, GAS_NORMAL },
 };
-int g_gas_count = 5;  /* change to 1‥5 to test each layout */
+int g_gas_count = 4;  /* change to 1‥5 to test each layout */
 
 /* ── Screen objects ──────────────────────────────── */
 static lv_obj_t *scr_home;
@@ -266,6 +269,35 @@ const char *ui_get_text(const char *key)
         if (strcmp(key, "高报") == 0) return "High Alarm";
         if (strcmp(key, "软件信息") == 0) return "SW Info";
         if (strcmp(key, "硬件信息") == 0) return "HW Info";
+        
+        // Calibration page translations
+        if (strcmp(key, "▲ 模拟+") == 0) return "▲ Sim+";
+        if (strcmp(key, "▼ 模拟-") == 0) return "▼ Sim-";
+        if (strcmp(key, "OK 开始校准") == 0) return "OK Start Cal";
+        if (strcmp(key, "OK 不可用") == 0) return "OK Invalid";
+        if (strcmp(key, "ESC 改标气") == 0) return "ESC Target";
+        if (strcmp(key, "▲ 选位") == 0) return "▲ Sel Bit";
+        if (strcmp(key, "▼ 选位") == 0) return "▼ Sel Bit";
+        if (strcmp(key, "OK 编辑") == 0) return "OK Edit";
+        if (strcmp(key, "OK 确定") == 0) return "OK Confirm";
+        if (strcmp(key, "校准中...") == 0) return "Calibrating...";
+        if (strcmp(key, "校准成功") == 0) return "Calib Success";
+        if (strcmp(key, "校准失败") == 0) return "Calib Failed";
+        if (strcmp(key, "当前值已写入校准系数") == 0) return "Calib value saved";
+        if (strcmp(key, "偏差过大,请检查标气或传感器") == 0) return "Dev too high, check sensor";
+        if (strcmp(key, "超出范围,无法校准") == 0) return "Out of range, fail";
+        if (strcmp(key, "允许范围") == 0) return "Range";
+        if (strcmp(key, "校准范围") == 0) return "Cal Range";
+        if (strcmp(key, "按 OK 开始校准") == 0) return "Press OK to start";
+        if (strcmp(key, "请通入零气") == 0) return "Apply zero gas";
+        if (strcmp(key, "目标") == 0) return "Target";
+        if (strcmp(key, "零点") == 0) return "Zero";
+        if (strcmp(key, "标准气浓度(位选调整)") == 0) return "Standard Gas (Digit Edit)";
+        if (strcmp(key, "▲▼ 选位   OK 编辑该位") == 0) return "▲▼ Select   OK Edit";
+        if (strcmp(key, "▲▼ 改数字   OK 下一位") == 0) return "▲▼ Change   OK Next";
+        if (strcmp(key, "数值: ") == 0) return "Value: ";
+        if (strcmp(key, "可校准") == 0) return "Calib OK";
+        if (strcmp(key, "确定 (OK)") == 0) return "OK";
         
         return key;
     }

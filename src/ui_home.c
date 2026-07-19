@@ -289,17 +289,63 @@ static void layout_4gas(lv_obj_t *parent)
         int x = PAD + col * (card_w + PAD);
         int y = CONTENT_Y + PAD + row * (card_h + PAD);
 
-        lv_color_t bg = (g_gas[i].status == GAS_ALARM) ? C_BG_CARD_ALT : C_BG_CARD;
+        gas_ch_t *g = &g_gas[i];
+        lv_color_t bg = (g->status == GAS_ALARM) ? C_BG_CARD_ALT : C_BG_CARD;
         lv_obj_t *c = ui_card_create(parent, x, y, card_w, card_h, bg, C_BORDER);
         card_objs[i] = c;
 
-        lv_obj_t *ls = lv_label_create(c);
-        lv_label_set_text(ls, g_gas[i].symbol);
-        lv_obj_set_style_text_color(ls, C_TEXT_SEC, 0);
-        lv_obj_set_style_text_font(ls, FN10, 0);
-        lv_obj_align(ls, LV_ALIGN_TOP_LEFT, 6, 5);
+        /* 1. Gas Symbol (e.g. CO) */
+        lv_obj_t *lbl_symbol = lv_label_create(c);
+        lv_label_set_text(lbl_symbol, g->symbol);
+        lv_obj_set_style_text_color(lbl_symbol, C_ACCENT, 0);
+        lv_obj_set_style_text_font(lbl_symbol, FN16, 0);
+        lv_obj_align(lbl_symbol, LV_ALIGN_TOP_LEFT, 10, 8);
 
-        card_add_content(c, i, FN28, 0, 18, 56, 3, 5, false);
+        /* 2. Gas Chinese/Translated Name next to symbol */
+        const char *full_name = ui_get_text(g->name);
+        const char *name_part = strchr(full_name, ' ');
+        while (name_part && *name_part == ' ') name_part++;
+        if (!name_part) name_part = full_name;
+
+        lv_obj_t *lbl_name = lv_label_create(c);
+        lv_label_set_text(lbl_name, name_part);
+        lv_obj_set_style_text_color(lbl_name, C_TEXT_SEC, 0);
+        lv_obj_set_style_text_font(lbl_name, UI_FONT_CJK_14, 0);
+        lv_obj_align_to(lbl_name, lbl_symbol, LV_ALIGN_OUT_RIGHT_BOTTOM, 6, -2);
+
+        /* 3. Value Label */
+        char buf[16];
+        snprintf(buf, sizeof(buf), "%.1f", g->value);
+        lv_color_t val_col = (g->status == GAS_ALARM) ? C_ALARM : C_OK;
+
+        lv_obj_t *lbl_val = lv_label_create(c);
+        lv_label_set_text(lbl_val, buf);
+        lv_obj_set_style_text_color(lbl_val, val_col, 0);
+        lv_obj_set_style_text_font(lbl_val, FN28, 0);
+        lv_obj_align(lbl_val, LV_ALIGN_TOP_LEFT, 10, 30);
+        h_val[i] = lbl_val;
+
+        /* 4. Unit Label */
+        lv_obj_t *lbl_unit = lv_label_create(c);
+        lv_label_set_text(lbl_unit, g->unit);
+        lv_obj_set_style_text_color(lbl_unit, C_TEXT_SEC, 0);
+        lv_obj_set_style_text_font(lbl_unit, FN14, 0);
+        lv_obj_align_to(lbl_unit, lbl_val, LV_ALIGN_OUT_RIGHT_BOTTOM, 4, -4);
+
+        /* 5. Progress Bar */
+        lv_obj_t *bar = lv_bar_create(c);
+        lv_obj_set_size(bar, card_w - 20, 4);
+        lv_obj_align(bar, LV_ALIGN_BOTTOM_MID, 0, -8);
+        lv_obj_set_style_bg_color(bar, C_BAR_BG, 0);
+        lv_color_t ind_col = ui_status_color(g->status);
+        lv_obj_set_style_bg_color(bar, ind_col, LV_PART_INDICATOR);
+        lv_obj_set_style_radius(bar, 2, 0);
+        lv_obj_set_style_radius(bar, 2, LV_PART_INDICATOR);
+        lv_bar_set_range(bar, 0, (int)(g->range_max * 10));
+        lv_bar_set_value(bar, (int)(g->value * 10), LV_ANIM_OFF);
+        h_bar[i] = bar;
+
+        h_badge[i] = NULL;
     }
 }
 
